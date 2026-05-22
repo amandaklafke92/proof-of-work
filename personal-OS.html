@@ -512,7 +512,7 @@
       </li>
     </ul>
 
-    <p>The structure is a mix of ideas I picked up from people building similar systems — second brains, LLM wikis, team operating systems — repurposed around my own life and the way I actually work.</p>
+    <p>The structure is a mix of ideas I picked up from people building similar systems—second brains, LLM wikis, team operating systems—repurposed around my own life and the way I actually work.</p>
   </section>
 
   <!-- ── 03 How It Works ─────────────────────────────────── -->
@@ -526,7 +526,7 @@
       <img src="assets_confirmed/03_workflow_square.png" alt="Workflow diagram showing how a session starts" class="no-border">
     </figure>
 
-    <p>In practice this means that I can ask short, simple questions and still get useful responses back. Below are two quick examples.</p>
+    <p>In practise, this setup means I can ask Claude short, simple questions and still get useful responses back. Below are two quick examples.</p>
 
     <span class="section-label">Example 01:</span>
     <div class="example">
@@ -538,15 +538,15 @@
       </div>
     </div>
 
-    <p>I wanted a clear picture of how the projects connected to my career strategy were actually tracking. This was the first time I'd asked Claude to do this — I hadn't packaged it into a skill yet. It was also the biggest system test so far, and Claude pulled it off.</p>
+    <p>I was starting to feel overwhelmed by growing to-do list, and needed to get a clear picture of how the projects connected to my career strategy were actually tracking. It was the first time I'd asked Claude to pull context from so many different folders. What you see below is not the result of a skill, just a stream-of-consciousness-stye prompt.</p>
 
     <figure>
       <img src="assets_confirmed/03a_cross-project-strategy_blurred.png" alt="Claude's cross-project strategy review" class="rounded">
     </figure>
 
-    <p>Claude pulled from the project folders, recent work logs, and my core-context files to name each project, describe where it stood, refer to the last time I'd worked on it, and place it back inside the larger strategy.</p>
-
-    <p>That was the first proof that the system was doing what I needed it to.</p>
+    <p>As you can see, Claude read 13 sources across in claude-homebase, namely, recent work logs and my core context files. But Claude didn't just share the staus of each project and the last time I'd worked on them; it also placed each one back inside the larger strategy. I asked a few follow up questions, of course, and by the end of the conversation I had parked all but two projects and restructured my weekly rhythm.</p>
+      
+      <p>The source of my overwhelm was that I'd taken on too much, obviously. But having this personal operating system allowed me to put everything back into context and figure out what was worth continuing.</p>
 
     <span class="section-label">Example 02:</span>
     <div class="example">
@@ -567,7 +567,7 @@
 
     <p>Because Claude had the project context, work log and broader strategic context around the project, the next session started with the right details and a clear next step. No more 15-minute warm-up.</p>
 
-    <p>That same trail helped again at the end of the project. I needed to hand over both the assets we'd built, and the method behind them. Instead of reconstructing the process from notes and memory, I asked Claude to assemble it from the project record.</p>
+    <p>That same file trail helped again at the end of the project when it came time to hand over the assets we'd built and the method behind them. Instead of reconstructing the process from notes and memory, I asked Claude to assemble it from the project records. It probably saved me at least a couple days of work.</p>
   </section>
 
   <!-- ── 04 Key Decisions ────────────────────────────────── -->
@@ -575,7 +575,7 @@
     <span class="section-label">— 04</span>
     <h2>Key Decisions</h2>
 
-    <p>The system emerged one practical decision at a time rather than from some master plan. One of its advantages is that it isn't tied to Claude: any agent that can read local files can work with it.</p>
+    <p>The system emerged one practical decision at a time rather than from some master plan.</p>
 
     <div class="decision">
       <div class="decision-header">
@@ -606,7 +606,9 @@
         <span class="decision-number">4</span>
         <span class="decision-lead">Google Drive as the filing cabinet.</span>
       </div>
-      <p>Source documents I didn't create — PDFs, shared spreadsheets, reference material — stay in the cloud. Not everything needs to live in the same place to be part of the same system; Claude knows it's there and can access files as and when needed.</p>
+      <p>Source documents I didn't create—PDFs, shared spreadsheets, reference material—stay in the cloud. Not everything needs to live in the same place to be part of the same system: my CLAUDE.md let's Claude know what's in Google Drive and the MCP gives Claude access.</p>
+      
+      <p>What I didn't realise as I was building this was that having data stored locally meant that I wasn't tied to Claude: any agent that can access my computer can work inside it.</p>
     </div>
   </section>
 
@@ -633,9 +635,9 @@
     <span class="section-label">— 06</span>
     <h2>What's Next</h2>
 
-    <p>The more I used this system, the more it started to feel relevant beyond personal productivity. The same underlying problem shows up in businesses too: useful AI depends on usable context, clean information, and workflows people will actually adopt. That's part of why I later built a proof of concept for my former boss. I wanted him to experience what AI could do inside his own business, not just hear a pitch about it.</p>
+    <p>The more I used this system, the more it started to feel relevant beyond personal productivity. The same underlying problem shows up in businesses too: useful AI depends on usable context, clean information, and workflows people will adopt. That's part of why I later built a proof of concept for my former boss. I wanted him to experience what AI could do inside his own business, not just hear a pitch about it.</p>
 
-    <p>I didn't start by building an organisation-level version, partly because I was still testing my own system and partly because I wasn't yet sure how well the approach would translate to a company setting. It raised questions I didn't have to solve for myself. For example:</p>
+    <p>I didn't start by building a Team or an Org OS, partly because I was still testing my own system and partly because I wasn't sure how well the approach would translate to a company setting. It raised questions I didn't have to solve for myself. For example:</p>
 
     <ul class="questions">
       <li>How do you make sure employees can see what they need, without giving them access to things they shouldn't see?</li>
@@ -650,23 +652,23 @@
   <section class="epilogue" id="epilogue">
     <h2>Epilogue</h2>
 
-    <p>Just as I finished writing this, the system gave me one last proof point.</p>
+    <p>Just as I finished writing this, my personal OS gave me one last proof point.</p>
 
-    <p>I opened a new Codex session and before I'd typed anything saw a prompt suggestion about enterprise AI adoption, a theme spread across my priorities, projects, meeting notes and connected tools.</p>
+    <p>I opened a Codex session and before I'd typed anything saw a prompt suggestion about enterprise AI adoption.
 
     <figure>
       <img src="assets_confirmed/06_codex-suggested-prompt.png" alt="Codex suggested prompt — enterprise AI adoption" class="rounded">
     </figure>
 
-    <p>Codex surfaced a pattern from context I had already put in place, not just from inside my local files, but from across my connected tools. And I didn't even have to prompt.</p>
+    <p>Codex surfaced a pattern from information inside my local files and scattered across connected tools and then it basically prompted itself; I just clicked the button.</p>
 
     <figure>
       <img src="assets_confirmed/06b_codex-response.png" alt="Codex response" class="rounded">
     </figure>
 
-    <p>So why did Codex include a public essay angle and short LinkedIn draft in the memo? Because it knows that I'm actively writing on LinkedIn and Substack as a part of my career strategy, a markdown file that sits inside my core-context folder.</p> 
+    <p>Why did Codex include a public essay angle and short LinkedIn draft in the memo? Because it knows that I'm actively writing on LinkedIn and Substack as a part of my career strategy because it says so in a markdown file that sits inside my core-context folder.</p> 
       
-      <p>I never imagined that cleaning up my folders would end in creating an entirely new infrastructure, learning GitHub, working in markdown, and even creating this html file that you'r reading now (with Claude's help of course). What I originally felt was a distraction turned out to be one of the most important things in my AI learning so far.</p>
+      <p>I never imagined that cleaning up my folders would result creating an entirely new infrastructure, learning GitHub, working in markdown, and even creating this html file that you're reading now (which I did with Claude's help of course). What I originally felt was a distraction turned out to be one of the most important things in my AI learning so far.</p>
 
   <footer class="site-footer">
     Amanda Esnaola &nbsp;·&nbsp; May 2026
