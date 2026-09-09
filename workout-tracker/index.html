@@ -51,6 +51,13 @@
       text-transform: uppercase;
     }
     figure { margin: 36px 0; }
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin: 36px 0;
+    }
+    .screenshot-grid figure { margin: 0; }
     figure img {
       display: block;
       width: 100%;
@@ -76,6 +83,25 @@
       text-transform: uppercase;
     }
     .button.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+    .asset-link {
+      display: inline-block;
+      margin-top: 10px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+    .asset-link:hover { color: var(--ink); }
+    .interactive-frame {
+      width: 100%;
+      height: 720px;
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      background: #f7f8f4;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    }
     .decision-list { list-style: none; margin: 24px 0; }
     .decision-list li {
       margin-bottom: 18px;
@@ -102,6 +128,8 @@
     @media (max-width: 600px) {
       body { padding: 34px 20px 80px; }
       .cta-row { display: grid; }
+      .screenshot-grid { grid-template-columns: 1fr; }
+      .interactive-frame { height: 760px; }
     }
   </style>
 </head>
@@ -115,13 +143,20 @@
       <span class="meta-tag">Apps Script</span>
       <span class="meta-tag">Mobile Web App</span>
     </div>
-    <p class="lede">A private strength-training tracker that began as a spreadsheet and became a mobile web app. The public demo uses a copied workout dataset because the numbers are useful for testing realistic flows and I do not treat this training data as sensitive.</p>
+    <p class="lede">A private strength-training tracker that began as a spreadsheet and became a mobile web app after a single Codex prompt. The public demo uses copied workout data because realistic numbers make the flow easier to test and understand.</p>
   </header>
 
-  <figure>
-    <img src="assets/mobile-flow-reference.png" alt="Mobile workout app active program screen">
-    <figcaption>Reference screenshot used while shaping the mobile flow.</figcaption>
-  </figure>
+  <div class="screenshot-grid">
+    <figure>
+      <img src="assets/workout-tracker-dashboard.png" alt="Workout Tracker dashboard showing weekly workout progress">
+      <figcaption>The dashboard view: week state, pending work, planned sessions, and cardio.</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/workout-tracker-complete.png" alt="Workout Tracker completed workout screen with training distribution body map">
+      <figcaption>The completed-workout view: saved set count and training distribution SVG.</figcaption>
+      <a class="asset-link" href="assets/training-distribution-muscle-map.html">Open the interactive SVG review</a>
+    </figure>
+  </div>
 
   <div class="cta-row">
     <a class="button primary" href="demo/">Open the demo</a>
@@ -131,13 +166,23 @@
   <section>
     <h2>What I Was Solving</h2>
     <p>The tracker needed to support the way I actually train: planned sessions, substitutions, skipped work, previous performance, mesocycle progression, and enough structure to review patterns over time. Google Sheets was already the source of truth, but using the sheet directly on a phone was too slow and fiddly for the middle of a workout.</p>
+    <p>I also wanted to test something specific: what could Codex build from a lightweight MVP brief, my existing workout tracker files, a UI screenshot from a workout app I liked, and one prompt? I sent it off, went to sleep, and woke up to a working app.</p>
   </section>
 
   <section>
     <h2>What I Built</h2>
     <p>The production system is a private Google Sheet with Apps Script logic and a mobile-first web interface. The Sheet remains the database and review surface; the web app handles the workout flow, draft state, validation, completion, and recovery paths.</p>
+    <p>It was relatively easy to get a usable first version because the logic was not starting from zero. The spreadsheet tabs already held the important structure: programs, sessions, exercise history, volume targets, mesocycles, and logged performance. Codex mostly had to read that existing system and wrap it in a phone-friendly interface.</p>
+    <p>The first pass did not look exactly like the current version, and it did not have the anatomical training-distribution image yet. But it was close enough that I spent about 10 minutes fixing mobile bugs and used it that same morning to track my first workout through the app.</p>
     <p>The shareable demo is generated separately as one standalone HTML file. It inlines the app shell, styles, shared workout engines and a mock backend, so people can try the interaction without touching the live Google Sheet or Apps Script deployment.</p>
     <p>The demo intentionally includes realistic workout metrics. That makes testing more useful: the interface has to handle real session names, previous-performance values, substitutions, skipped work, and completion flows rather than toy examples.</p>
+  </section>
+
+  <section>
+    <h2>Interactive SVG</h2>
+    <p>The anatomical training-distribution view is built as an interactive SVG rather than a static image. Each muscle region is addressable by name, so the app can highlight the muscles worked in a completed session and compare that workout with the rest of the week.</p>
+    <iframe class="interactive-frame" src="assets/training-distribution-muscle-map.html" title="Interactive training distribution muscle map"></iframe>
+    <a class="asset-link" href="assets/training-distribution-muscle-map.html">Open full-screen SVG review</a>
   </section>
 
   <section>
@@ -145,7 +190,11 @@
     <ul class="decision-list">
       <li>
         <strong>Keep the spreadsheet as the source of truth.</strong>
-        The project did not need a new database. It needed a better interface over a system that already worked.
+        The project did not need a new database. It needed a better interface over a system that already worked, with the core workout logic already expressed in Sheet tabs and Apps Script.
+      </li>
+      <li>
+        <strong>Use the first build as a capability test.</strong>
+        The initial app came from one prompt, preexisting tracker files, a short MVP brief, and a visual reference. That made the project a practical test of how far Codex could get without a long back-and-forth specification process.
       </li>
       <li>
         <strong>Separate the private app from the public demo.</strong>
@@ -154,6 +203,10 @@
       <li>
         <strong>Reuse shared logic where possible.</strong>
         Validation and workout-domain helpers are pulled into the demo so the public version stays close to the real app without exposing private persistence code.
+      </li>
+      <li>
+        <strong>Add the anatomical view after the core workflow worked.</strong>
+        The training-distribution SVG was a later refinement: an interactive front/back muscle map that turns completed sets into something easier to scan than a table.
       </li>
     </ul>
   </section>
