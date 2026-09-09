@@ -143,7 +143,7 @@
       <span class="meta-tag">Apps Script</span>
       <span class="meta-tag">Mobile Web App</span>
     </div>
-    <p class="lede">A private strength-training tracker that began as a spreadsheet and became a mobile web app after a single Codex prompt. The public demo uses copied workout data because realistic numbers make the flow easier to test and understand.</p>
+    <p class="lede">A private strength-training tracker that began as a spreadsheet and became a mobile web app after a single Codex prompt.</p>
   </header>
 
   <div class="screenshot-grid">
@@ -153,8 +153,8 @@
     </figure>
     <figure>
       <img src="assets/workout-tracker-complete.png" alt="Workout Tracker completed workout screen with training distribution body map">
-      <figcaption>The completed-workout view: saved set count and training distribution SVG.</figcaption>
-      <a class="asset-link" href="assets/training-distribution-muscle-map.html">Open the interactive SVG review</a>
+      <figcaption>The completed-workout view: saved set count and the production training distribution SVG.</figcaption>
+      <a class="asset-link" href="assets/training-distribution-muscle-map.html">Open the separate interactive SVG review</a>
     </figure>
   </div>
 
@@ -180,7 +180,8 @@
 
   <section>
     <h2>Interactive SVG</h2>
-    <p>The anatomical training-distribution view is built as an interactive SVG rather than a static image. Each muscle region is addressable by name, so the app can highlight the muscles worked in a completed session and compare that workout with the rest of the week.</p>
+    <p>The completed-workout screen uses an anatomical SVG rather than a static image. Each muscle region is addressable by name, so the app can highlight the muscles worked in a completed session and compare that workout with the rest of the week.</p>
+    <p>The interactive version below is not part of the app itself. I created it as a review tool to test the mapping Codex had done between the spreadsheet's muscle groups and the individual SVG paths before connecting the body map to workout data.</p>
     <iframe class="interactive-frame" src="assets/training-distribution-muscle-map.html" title="Interactive training distribution muscle map"></iframe>
     <a class="asset-link" href="assets/training-distribution-muscle-map.html">Open full-screen SVG review</a>
   </section>
@@ -206,7 +207,7 @@
       </li>
       <li>
         <strong>Add the anatomical view after the core workflow worked.</strong>
-        The training-distribution SVG was a later refinement: an interactive front/back muscle map that turns completed sets into something easier to scan than a table.
+        The training-distribution SVG was a later refinement that turns completed sets into something easier to scan than a table. I also built a separate interactive SVG review page to check that Codex had mapped each muscle group to the right body paths before the visualization was used in the app.
       </li>
     </ul>
   </section>
