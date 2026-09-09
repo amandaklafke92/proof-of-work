@@ -1,15 +1,26 @@
-# Proof of Work — Folder Notes
+# Proof of Work - Folder Notes
 
 ## Current state
-- `index.html` — Personal OS case study (the only case study so far)
 
-## When you add a second case study
-Right now `index.html` IS the Personal OS case study. That works while it's the only one.
+This repo is a public portfolio index for selected proof-of-work projects.
 
-When you add a second case study, you'll need to:
-1. Rename `index.html` back to `personal-OS.html`
-2. Create a new file for the next case study (e.g. `3xp.html`)
-3. Replace `index.html` with a simple landing page that links to both case studies
-4. Commit and push
+- `index.html` - landing page linking to published case studies.
+- `personal-os/` - long-form Personal OS case study and assets.
+- `workout-tracker/` - shorter Workout Tracker case study, assets, and static demo.
 
-The landing page can be minimal — just your name, a short line, and links to each case study.
+## Public Data Boundary
+
+Amanda is comfortable publishing Workout Tracker demo data that includes workout names, weights, volumes, and related training metrics. That data is useful because it keeps the demo realistic for testing and portfolio review.
+
+Do not publish credentials, private source repositories, live Google Sheet links, raw project logs, unrelated personal records, meeting notes, or third-party private material.
+
+## Adding Flavour Lab later
+
+When Flavour Lab is ready for public reference:
+
+1. Create `flavour-lab/index.html` as a short case study.
+2. Add any sanitized screenshots under `flavour-lab/assets/`.
+3. If there is a public demo, keep it under `flavour-lab/demo/`.
+4. Add the Flavour Lab card to the root `index.html` where the current hidden placeholder comment sits.
+
+Do not copy private source, credentials, raw research material, meeting notes, or user data into this repo unless Amanda has explicitly marked that specific material as public-safe.

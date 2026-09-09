@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Tracker - Amanda Esnaola</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #ffffff;
+      --ink: #1e1b17;
+      --muted: #7d7260;
+      --rule: #cfc5b0;
+      --code-bg: #eee9de;
+      --accent: #8a7558;
+      --max-w: 700px;
+    }
+    html {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
+      font-size: 17px;
+      line-height: 1.78;
+    }
+    body { max-width: var(--max-w); margin: 0 auto; padding: 48px 24px 96px; }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 36px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.07em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+    .back-link:hover { color: var(--ink); }
+    header { margin-bottom: 42px; padding-bottom: 22px; border-bottom: 1px solid var(--rule); }
+    h1 { margin-bottom: 14px; font-size: clamp(34px, 7vw, 48px); line-height: 1.1; letter-spacing: -0.02em; }
+    h2 { margin: 62px 0 22px; font-size: clamp(22px, 4vw, 28px); line-height: 1.2; }
+    p { margin-bottom: 22px; }
+    .lede { font-size: 19px; line-height: 1.7; }
+    .meta-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+    .meta-tag {
+      border: 1px solid var(--rule);
+      border-radius: 20px;
+      padding: 2px 8px;
+      color: var(--muted);
+      font-size: 9.5px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    figure { margin: 36px 0; }
+    figure img {
+      display: block;
+      width: 100%;
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    }
+    figcaption { margin-top: 10px; color: var(--muted); font-size: 13px; font-style: italic; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 30px 0 8px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      padding: 8px 16px;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+    .button.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+    .decision-list { list-style: none; margin: 24px 0; }
+    .decision-list li {
+      margin-bottom: 18px;
+      padding-left: 18px;
+      border-left: 3px solid var(--accent);
+    }
+    .decision-list strong { display: block; margin-bottom: 4px; }
+    code {
+      border-radius: 3px;
+      background: var(--code-bg);
+      padding: 2px 6px;
+      color: var(--ink);
+      font-family: 'DM Mono', 'Courier New', monospace;
+      font-size: 13.5px;
+    }
+    footer {
+      margin-top: 72px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+      color: var(--muted);
+      font-size: 13px;
+      font-style: italic;
+    }
+    @media (max-width: 600px) {
+      body { padding: 34px 20px 80px; }
+      .cta-row { display: grid; }
+    }
+  </style>
+</head>
+<body>
+  <a class="back-link" href="../">Back to proof of work</a>
+
+  <header>
+    <h1>Workout Tracker</h1>
+    <div class="meta-tags">
+      <span class="meta-tag">Google Sheets</span>
+      <span class="meta-tag">Apps Script</span>
+      <span class="meta-tag">Mobile Web App</span>
+    </div>
+    <p class="lede">A private strength-training tracker that began as a spreadsheet and became a mobile web app. The public demo uses a copied workout dataset because the numbers are useful for testing realistic flows and I do not treat this training data as sensitive.</p>
+  </header>
+
+  <figure>
+    <img src="assets/mf-workouts/active-program-week-5.png" alt="Mobile workout app active program screen">
+    <figcaption>Reference screenshot from MacroFactor Workouts used while shaping the mobile flow.</figcaption>
+  </figure>
+
+  <div class="cta-row">
+    <a class="button primary" href="demo/">Open the demo</a>
+    <a class="button" href="../personal-os/">Read Personal OS</a>
+  </div>
+
+  <section>
+    <h2>What I Was Solving</h2>
+    <p>The tracker needed to support the way I actually train: planned sessions, substitutions, skipped work, previous performance, mesocycle progression, and enough structure to review patterns over time. Google Sheets was already the source of truth, but using the sheet directly on a phone was too slow and fiddly for the middle of a workout.</p>
+  </section>
+
+  <section>
+    <h2>What I Built</h2>
+    <p>The production system is a private Google Sheet with Apps Script logic and a mobile-first web interface. The Sheet remains the database and review surface; the web app handles the workout flow, draft state, validation, completion, and recovery paths.</p>
+    <p>The shareable demo is generated separately as one standalone HTML file. It inlines the app shell, styles, shared workout engines and a mock backend, so people can try the interaction without touching the live Google Sheet or Apps Script deployment.</p>
+    <p>The demo intentionally includes realistic workout metrics. That makes testing more useful: the interface has to handle real session names, previous-performance values, substitutions, skipped work, and completion flows rather than toy examples.</p>
+  </section>
+
+  <section>
+    <h2>Key Decisions</h2>
+    <ul class="decision-list">
+      <li>
+        <strong>Keep the spreadsheet as the source of truth.</strong>
+        The project did not need a new database. It needed a better interface over a system that already worked.
+      </li>
+      <li>
+        <strong>Separate the private app from the public demo.</strong>
+        The real deployment is tied to my Google account and training history. The demo uses mock data and local browser storage.
+      </li>
+      <li>
+        <strong>Reuse shared logic where possible.</strong>
+        Validation and workout-domain helpers are pulled into the demo so the public version stays close to the real app without exposing private persistence code.
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Different From Personal OS</h2>
+    <p>Personal OS was mostly an information architecture problem: how to make context durable enough for AI collaboration. Workout Tracker was a product and workflow problem: how to make a private, real-data system usable in the moment, on a phone, while preserving the reliability of the underlying Sheet.</p>
+  </section>
+
+  <footer>
+    Amanda Esnaola · Workout Tracker
+  </footer>
+</body>
+</html>
