@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111a18">
 <title>Workout Tracker</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.8.0/dist/driver.css">
+<script defer src="https://cdn.jsdelivr.net/npm/driver.js@1.8.0/dist/driver.js.iife.js"></script>
 <style>
   :root {
     --ink: #132019;
@@ -381,6 +383,36 @@
     font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
   }
   .demo-pill-reset:hover { background: var(--surface-soft); }
+  .demo-pill-tour {
+    width: 100%; border: 0; border-radius: 999px; padding: 8px 12px;
+    background: var(--accent); color: #fff; font: inherit; font-size: 13px;
+    font-weight: 650; cursor: pointer;
+  }
+  .demo-pill-tour:hover { background: var(--accent-deep); }
+  .demo-pill-tour:disabled { opacity: .6; cursor: not-allowed; }
+
+  /* Scoped to the optional, demo-only Driver.js popover. */
+  .driver-popover.workout-demo-tour {
+    max-width: min(330px, calc(100vw - 28px)); border-radius: 16px;
+    background: var(--ink); color: #fff; box-shadow: 0 18px 48px rgba(13,31,22,.32);
+  }
+  .driver-popover.workout-demo-tour .driver-popover-title { color: #fff; font: inherit; font-size: 18px; font-weight: 700; }
+  .driver-popover.workout-demo-tour .driver-popover-description { color: rgba(255,255,255,.82); font: inherit; font-size: 14px; line-height: 1.45; }
+  .driver-popover.workout-demo-tour .driver-popover-footer { margin-top: 14px; }
+  .driver-popover.workout-demo-tour .driver-popover-progress-text { color: rgba(255,255,255,.64); font: inherit; }
+  .driver-popover.workout-demo-tour .driver-popover-navigation-btns button {
+    border-radius: 9px; font: inherit; font-weight: 650;
+  }
+  .driver-popover.workout-demo-tour .driver-popover-next-btn { background: #55c78f; color: #10251a; text-shadow: none; }
+  .driver-popover.workout-demo-tour .driver-popover-prev-btn {
+    border: 1px solid rgba(255,255,255,.45); background: transparent;
+    color: rgba(255,255,255,.9); text-shadow: none;
+  }
+  .driver-popover.workout-demo-tour .driver-popover-close-btn { color: rgba(255,255,255,.8); }
+  .driver-popover.workout-demo-tour .driver-popover-arrow-side-left.driver-popover-arrow { border-left-color: var(--ink); }
+  .driver-popover.workout-demo-tour .driver-popover-arrow-side-right.driver-popover-arrow { border-right-color: var(--ink); }
+  .driver-popover.workout-demo-tour .driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: var(--ink); }
+  .driver-popover.workout-demo-tour .driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: var(--ink); }
 </style>
 </head>
 <body>
@@ -3088,6 +3120,287 @@ if (typeof module !== 'undefined' && module.exports) {
 
 (function () {
   var PILL_ID = 'demo-pill';
+  var TOUR_RESUME_KEY = 'workout-tracker-demo/tour-after-reset';
+  var AUTO_TOUR_KEY = 'workout-tracker-demo/tour-seen-v1';
+  var AUTO_TOUR_DELAY_MS = 2000;
+  var tour = null;
+  var tourObserver = null;
+
+  function targets(name) {
+    return Array.prototype.slice.call(document.querySelectorAll('[data-tour="' + name + '"]'));
+  }
+
+  function target(name) {
+    return document.querySelector('[data-tour="' + name + '"]');
+  }
+
+  function startWorkoutTarget() {
+    // The demo only exposes resistance sessions here; still skip the special
+    // Pending or already-completed row if the seed changes in the future.
+    return targets('start-workout').find(function (button) {
+      return button.dataset.sessionType && button.dataset.sessionType !== 'PENDING'
+        && button.dataset.tourState !== 'completed';
+    }) || null;
+  }
+
+  function swapStepTarget() {
+    return target('confirm-exercise-swap') || target('swap-option');
+  }
+
+  function nextExerciseTarget() {
+    return targets('exercise-tab').find(function (button) {
+      return button.getAttribute('aria-selected') !== 'true';
+    }) || target('exercise-tab');
+  }
+
+  function adaptTarget() {
+    return swapStepTarget() || target('swap-exercise');
+  }
+
+  function allVisibleSetsCompleted() {
+    var checkboxes = targets('set-complete');
+    return checkboxes.length > 0 && checkboxes.every(function (checkbox) { return checkbox.checked; });
+  }
+
+  function completionTarget() {
+    return target('training-distribution') || target('confirm-complete') || target('complete-workout');
+  }
+
+  function waitForTarget(name, callback) {
+    var found = target(name);
+    if (found) { callback(found); return; }
+    var observer = new MutationObserver(function () {
+      var match = target(name);
+      if (!match) return;
+      observer.disconnect();
+      callback(match);
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function waitForDriver(callback) {
+    var attempts = 0;
+    (function check() {
+      if (window.driver && window.driver.js && window.driver.js.driver) {
+        callback();
+        return;
+      }
+      attempts += 1;
+      if (attempts < 60) window.setTimeout(check, 50);
+    }());
+  }
+
+  function updateFinalPopover() {
+    var popover = document.querySelector('.driver-popover.workout-demo-tour');
+    if (!popover) return;
+    var title = popover.querySelector('.driver-popover-title');
+    var description = popover.querySelector('.driver-popover-description');
+    var next = popover.querySelector('.driver-popover-next-btn');
+    if (target('training-distribution')) {
+      if (title) title.textContent = 'See what you trained';
+      if (description) {
+        description.textContent = 'Your completed sets feed into your training distribution, showing how much work each muscle group received this session.';
+      }
+      if (next) {
+        next.style.display = '';
+        next.textContent = 'Done';
+      }
+      return;
+    }
+    if (title) title.textContent = target('confirm-complete') ? 'Ready to save?' : 'Explore the workout';
+    if (description) {
+      description.textContent = target('confirm-complete')
+        ? 'Confirm the workout when you are ready to save it and see your workout stats.'
+        : 'Feel free to explore—check out History, add a note, or log more exercises. When you’re done, select Complete Workout to see your workout stats.';
+    }
+    if (next) next.style.display = 'none';
+  }
+
+  function updateSwapPopover() {
+    var popover = document.querySelector('.driver-popover.workout-demo-tour');
+    if (!popover) return;
+    var title = popover.querySelector('.driver-popover-title');
+    var description = popover.querySelector('.driver-popover-description');
+    if (target('confirm-exercise-swap')) {
+      if (title) title.textContent = 'Adapt the plan';
+      if (description) description.textContent = 'Review the replacement, then select Swap exercise to keep the session moving.';
+      return;
+    }
+    if (!target('swap-option')) {
+      if (title) title.textContent = 'Adapt the plan';
+      if (description) description.textContent = 'Need an alternative? Select Swap to keep the session flexible.';
+      return;
+    }
+    if (title) title.textContent = 'Adapt the plan';
+    if (description) description.textContent = 'Choose an alternative to see how the plan can flex without abandoning the workout.';
+  }
+
+  function observeTourState() {
+    if (tourObserver) tourObserver.disconnect();
+    var app = document.getElementById('app');
+    if (!app) return;
+    tourObserver = new MutationObserver(function () {
+      if (!tour || !tour.isActive()) return;
+      var index = tour.getActiveIndex();
+      // Completing a set redraws the logger and removes Driver's temporary
+      // active-element class with the old DOM. Re-enter this step so Driver
+      // resolves the generated data-tour anchor again and all remaining sets
+      // stay interactive.
+      if (index === 1 && target('set-logger')) {
+        window.setTimeout(function () {
+          if (tour && tour.isActive() && tour.getActiveIndex() === 1) tour.moveTo(1);
+        }, 0);
+      }
+      if (index === 4 && completionTarget()) {
+        window.setTimeout(function () {
+          if (tour && tour.isActive() && tour.getActiveIndex() === 4) {
+            tour.moveTo(4);
+            updateFinalPopover();
+          }
+        }, 0);
+      }
+    });
+    tourObserver.observe(app, { childList: true, subtree: true });
+  }
+
+  function stopTour() {
+    if (tourObserver) {
+      tourObserver.disconnect();
+      tourObserver = null;
+    }
+    tour = null;
+  }
+
+  function finishTour() {
+    if (target('training-distribution') && tour) tour.destroy();
+  }
+
+  function moveWhenReady(name, index) {
+    waitForTarget(name, function () {
+      if (!tour || !tour.isActive()) return;
+      tour.moveTo(index);
+      if (index === 3) updateSwapPopover();
+      if (index === 4) updateFinalPopover();
+    });
+  }
+
+  function moveAfterAction(name, index) {
+    window.setTimeout(function () { moveWhenReady(name, index); }, 0);
+  }
+
+  // Product-led transitions: a real app action is the only way forward.
+  // Each target is a generated data-tour anchor, never a visual selector.
+  document.addEventListener('click', function (event) {
+    if (!tour || !tour.isActive()) return;
+    var control = event.target && event.target.closest && event.target.closest(
+      '[data-tour]'
+    );
+    if (!control) return;
+    var index = tour.getActiveIndex();
+    var name = control.getAttribute('data-tour');
+    if (index === 0 && name === 'start-workout') moveAfterAction('set-logger', 1);
+    if (index === 1 && name === 'set-complete') {
+      window.setTimeout(function () {
+        if (tour && tour.isActive() && tour.getActiveIndex() === 1 && allVisibleSetsCompleted()) {
+          moveAfterAction('exercise-tab', 2);
+        }
+      }, 0);
+    }
+    if (index === 2 && name === 'exercise-tab') moveAfterAction('swap-exercise', 3);
+    if (index === 3 && name === 'swap-exercise') moveAfterAction('swap-option', 3);
+    if (index === 3 && name === 'swap-option') moveAfterAction('confirm-exercise-swap', 3);
+    if (index === 3 && name === 'confirm-exercise-swap') moveAfterAction('complete-workout', 4);
+    if (index === 4 && name === 'complete-workout') moveAfterAction('confirm-complete', 4);
+    if (index === 4 && name === 'confirm-complete') moveAfterAction('training-distribution', 4);
+  });
+
+  function beginTour() {
+    if (!window.driver || !window.driver.js || !window.driver.js.driver) return false;
+    if (!startWorkoutTarget()) return false;
+    if (tour && tour.isActive()) tour.destroy();
+
+    tour = window.driver.js.driver({
+      animate: true,
+      duration: 180,
+      allowClose: true,
+      allowScroll: true,
+      overlayColor: '#10251a',
+      overlayOpacity: 0.56,
+      smoothScroll: true,
+      stagePadding: 7,
+      stageRadius: 12,
+      disableActiveInteraction: false,
+      showProgress: true,
+      progressText: '{{current}} of {{total}}',
+      showButtons: ['close'],
+      popoverClass: 'workout-demo-tour',
+      onDoneClick: finishTour,
+      onHighlighted: function () {
+        if (!tour) return;
+        var index = tour.getActiveIndex();
+        if (index === 3) window.setTimeout(updateSwapPopover, 0);
+        if (index === 4) window.setTimeout(updateFinalPopover, 0);
+      },
+      onDestroyed: stopTour,
+      steps: [
+        {
+          element: startWorkoutTarget,
+          waitForElement: 3000,
+          popover: {
+            title: 'Start a workout',
+            description: 'Choose this resistance-training workout to begin.',
+            side: 'bottom', align: 'start'
+          }
+        },
+        {
+          element: function () { return target('set-logger'); },
+          waitForElement: 3000,
+          popover: {
+            title: 'Log your training',
+            description: 'Adjust the weight or reps as needed, then tick the sets to continue.',
+            side: 'bottom', align: 'center'
+          }
+        },
+        {
+          element: nextExerciseTarget,
+          popover: {
+            title: 'Move through your workout',
+            description: 'Select another exercise to move through your session.',
+            side: 'bottom', align: 'center'
+          }
+        },
+        {
+          element: adaptTarget,
+          waitForElement: 3000,
+          popover: {
+            title: 'Adapt the plan',
+            description: 'Choose an alternative to see how the plan can flex without abandoning the workout.',
+            side: 'bottom', align: 'center'
+          }
+        },
+        {
+          element: completionTarget,
+          waitForElement: 3000,
+          popover: {
+            title: 'Explore the workout',
+            description: 'Feel free to explore—check out History, add a note, or log more exercises. When you’re done, select Complete Workout to see your workout stats.',
+            side: 'top', align: 'center'
+          }
+        }
+      ]
+    });
+    observeTourState();
+    tour.drive();
+    return true;
+  }
+
+  function startTour() {
+    // Tours always begin from known seed state. Starting one resets only
+    // browser-local demo data, never the live app.
+    try { window.sessionStorage.setItem(TOUR_RESUME_KEY, '1'); } catch (error) {}
+    if (window.DEMO_CONTROL) window.DEMO_CONTROL.reset();
+    window.location.reload();
+  }
 
   function build() {
     if (document.getElementById(PILL_ID)) return;
@@ -3122,7 +3435,18 @@ if (typeof module !== 'undefined' && module.exports) {
       window.location.reload();
     });
 
+    var startTourButton = document.createElement('button');
+    startTourButton.type = 'button';
+    startTourButton.className = 'demo-pill-tour';
+    startTourButton.textContent = 'Take the quick tour';
+    startTourButton.addEventListener('click', function () {
+      panel.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+      startTour();
+    });
+
     panel.appendChild(copy);
+    panel.appendChild(startTourButton);
     panel.appendChild(reset);
 
     toggle.addEventListener('click', function () {
@@ -3154,10 +3478,39 @@ if (typeof module !== 'undefined' && module.exports) {
     }
   }, true);
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', build);
-  } else {
+  function buildAndResumeTour() {
     build();
+    try {
+      if (window.sessionStorage.getItem(TOUR_RESUME_KEY) === '1') {
+        window.sessionStorage.removeItem(TOUR_RESUME_KEY);
+        waitForTarget('start-workout', function () { waitForDriver(beginTour); });
+        return;
+      }
+    } catch (error) {}
+
+    // This explicit URL is useful for portfolio review and QA: it restarts the
+    // optional tour even after a browser has recorded its first visit.
+    if (/(?:^|&)tour=1(?:&|$)/.test(window.location.search.slice(1))) {
+      window.setTimeout(startTour, AUTO_TOUR_DELAY_MS);
+      return;
+    }
+
+    // New visitors get the guided path immediately. Driver's close button is
+    // always available, so this remains an invitation rather than a gate; the
+    // persistent marker prevents it restarting on later visits or reloads.
+    try {
+      if (window.localStorage.getItem(AUTO_TOUR_KEY) === '1') return;
+      window.localStorage.setItem(AUTO_TOUR_KEY, '1');
+      if (window.localStorage.getItem(AUTO_TOUR_KEY) === '1') {
+        window.setTimeout(startTour, AUTO_TOUR_DELAY_MS);
+      }
+    } catch (error) {}
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', buildAndResumeTour);
+  } else {
+    buildAndResumeTour();
   }
 }());
 
@@ -3940,7 +4293,7 @@ if (typeof module !== 'undefined' && module.exports) {
         '<p class="dashboard-list-label">This week</p>' +
         (sessions.length ? '<div class="dashboard-session-list">' + sessions.map(function (session) {
           const status = ['completed', 'in-progress', 'skipped'].indexOf(session.status) >= 0 ? session.status : 'not-started';
-          return '<button class="dashboard-session-row" type="button" data-action="load-dashboard-session" data-session-type="' + attr(session.sessionType) + '" aria-label="Open ' + attr(session.sessionType) + ', ' + attr(status.replace('-', ' ')) + '"' + (state.dashboardLoading ? ' disabled' : '') + '><span class="dashboard-status dashboard-status-' + status + '" aria-hidden="true">' + dashboardStatusIcon(status) + '</span><span><strong>' + text(session.sessionType) + '</strong><small>' + dashboardSessionCopy(session) + '</small></span></button>';
+          return '<button data-tour="start-workout" data-tour-state="' + attr(status) + '" class="dashboard-session-row" type="button" data-action="load-dashboard-session" data-session-type="' + attr(session.sessionType) + '" aria-label="Open ' + attr(session.sessionType) + ', ' + attr(status.replace('-', ' ')) + '"' + (state.dashboardLoading ? ' disabled' : '') + '><span class="dashboard-status dashboard-status-' + status + '" aria-hidden="true">' + dashboardStatusIcon(status) + '</span><span><strong>' + text(session.sessionType) + '</strong><small>' + dashboardSessionCopy(session) + '</small></span></button>';
         }).join('') + '</div>' : '<section class="card setup-card"><h2>No programmed sessions</h2><p class="confirm-copy">Add sessions to Programs in Google Sheets, then reload this page.</p></section>') +
         dashboardAdvanceHtml(dashboard) +
         renderDashboardCardio() +
@@ -4126,7 +4479,7 @@ if (typeof module !== 'undefined' && module.exports) {
       return '<nav class="exercise-rail-wrap" aria-label="Exercises"><div class="exercise-rail"><div class="exercise-tablist" role="tablist">' + state.draft.exercises.map(function (exercise) {
         const active = exercise.id === state.focusedId;
         const done = completeCount(exercise) === exercise.sets.length && exercise.sets.length > 0;
-        return '<button class="exercise-tab' + (done ? ' is-complete' : '') + '" type="button" role="tab" aria-selected="' + active + '" aria-controls="exercise-panel" data-action="focus-exercise" data-exercise-id="' + attr(exercise.id) + '">' +
+        return '<button data-tour="exercise-tab" class="exercise-tab' + (done ? ' is-complete' : '') + '" type="button" role="tab" aria-selected="' + active + '" aria-controls="exercise-panel" data-action="focus-exercise" data-exercise-id="' + attr(exercise.id) + '">' +
           '<span class="avatar" aria-hidden="true">' + text(initials(exercise.name)) + '</span><span class="tab-name">' + text(exercise.name) + '</span><span class="tab-progress">' + completeCount(exercise) + '/' + exercise.sets.length + '</span></button>';
       }).join('') + '</div><button class="exercise-add-card pending-add-card" type="button" data-action="show-pending-exercises" aria-label="Add a pending exercise" aria-haspopup="dialog"' + (unavailable ? ' disabled title="' + attr(unavailable) + '"' : '') + '><span class="exercise-add-box" aria-hidden="true">P</span><span class="visually-hidden">Add a pending exercise</span></button>' + (state.draft.pendingBatch ? '' : '<button class="exercise-add-card" type="button" data-action="show-add-exercise" aria-label="Add another exercise" aria-haspopup="dialog"' + (unavailable ? ' disabled title="' + attr(unavailable) + '"' : '') + '><span class="exercise-add-box" aria-hidden="true">+</span><span class="visually-hidden">Add another exercise</span></button>') + '</div></nav>';
     }
@@ -4140,10 +4493,10 @@ if (typeof module !== 'undefined' && module.exports) {
       return '<section id="exercise-panel" class="card focus-card" role="tabpanel" aria-label="' + attr(exercise.name) + '">' +
         '<div class="exercise-actions" aria-label="Exercise actions">' +
           '<button class="action-chip" type="button" data-action="show-history" aria-haspopup="dialog">History</button>' +
-          '<button class="action-chip" type="button" data-action="show-swap" aria-haspopup="dialog"' + (swapUnavailable ? ' disabled title="' + attr(swapUnavailable) + '"' : '') + '>Swap</button>' +
+          '<button data-tour="swap-exercise" class="action-chip" type="button" data-action="show-swap" aria-haspopup="dialog"' + (swapUnavailable ? ' disabled title="' + attr(swapUnavailable) + '"' : '') + '>Swap</button>' +
           '<button class="action-chip" type="button" data-action="show-exercise-note" aria-haspopup="dialog">Note</button>' +
         '</div>' +
-        '<div class="compact-set-grid" role="table" aria-label="Sets for ' + attr(exercise.name) + '">' +
+        '<div data-tour="set-logger" class="compact-set-grid" role="table" aria-label="Sets for ' + attr(exercise.name) + '">' +
           '<div class="compact-set-header" role="row"><span role="columnheader">Set</span><span role="columnheader">Previous</span><span role="columnheader">' + (isAssistedExercise(exercise) ? 'Assist' : 'kg') + '</span><span role="columnheader">Reps</span><span role="columnheader">RIR</span><span role="columnheader"><span class="visually-hidden">Done</span>✓</span></div>' +
           '<div class="compact-set-body">' + exercise.sets.map(function (set) { return renderSet(exercise, set); }).join('') + '</div>' +
           '<div class="add-set-row"><button class="set-type-circle add-set-button" type="button" data-action="add-set" aria-label="Add a standard set">+</button><button class="add-set-label" type="button" data-action="add-set">Add standard set</button></div>' +
@@ -4175,7 +4528,7 @@ if (typeof module !== 'undefined' && module.exports) {
           '</span>' +
           '<span class="compact-input-cell" role="cell"><input aria-label="Set ' + text(set.set) + ' repetitions" data-field="reps" data-set-id="' + id + '" type="number" inputmode="decimal" step="0.5" value="' + attr(numericValue(set.reps)) + '" placeholder="—"' + (placeholder ? ' disabled' : '') + '></span>' +
           '<span class="compact-input-cell" role="cell"><input aria-label="Set ' + text(set.set) + ' RIR" data-field="rir" data-set-id="' + id + '" type="number" inputmode="decimal" min="0" step="0.5" value="' + attr(numericValue(set.rir)) + '" placeholder="—"' + (placeholder ? ' disabled' : '') + '></span>' +
-          (placeholder ? '<span class="placeholder-mark" role="cell" aria-label="No completion required">—</span>' : '<span class="set-complete-cell" role="cell"><label><span class="visually-hidden">Mark set ' + text(set.set) + ' complete</span><input class="set-complete-checkbox" data-action="toggle-set" data-set-id="' + id + '" type="checkbox"' + checked(set.completed) + '></label></span>') +
+          (placeholder ? '<span class="placeholder-mark" role="cell" aria-label="No completion required">—</span>' : '<span class="set-complete-cell" role="cell"><label><span class="visually-hidden">Mark set ' + text(set.set) + ' complete</span><input data-tour="set-complete" class="set-complete-checkbox" data-action="toggle-set" data-set-id="' + id + '" type="checkbox"' + checked(set.completed) + '></label></span>') +
         '</div>' +
       '</div>';
     }
@@ -4194,7 +4547,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
     function renderStickyActions() {
       const skipUnavailable = skipWorkoutUnavailableReason();
-      return '<footer class="sticky-actions"><div class="sticky-actions-inner"><button id="complete-workout" class="button button-primary" type="button"' + (state.completing ? ' disabled' : '') + '>' + (state.completing ? 'Completing…' : 'Complete workout') + '</button>' +
+      return '<footer class="sticky-actions"><div class="sticky-actions-inner"><button data-tour="complete-workout" id="complete-workout" class="button button-primary" type="button"' + (state.completing ? ' disabled' : '') + '>' + (state.completing ? 'Completing…' : 'Complete workout') + '</button>' +
         sheetFallbackButton() + '</div><button id="skip-workout" class="button button-danger-soft button-block" style="margin-top:8px" type="button"' + (skipUnavailable ? ' disabled title="' + attr(skipUnavailable) + '"' : '') + '>Skip workout</button></footer>';
     }
 
@@ -5106,7 +5459,7 @@ if (typeof module !== 'undefined' && module.exports) {
       updateModal('<section class="bottom-sheet swap-sheet" role="dialog" aria-modal="true" aria-labelledby="swap-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Swap exercise' + (swap.primaryMuscle ? ' · ' + text(swap.primaryMuscle) : '') + '</p><h2 id="swap-title">Replace ' + text(swap.exerciseName) + '</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Close swap">×</button></div>' +
         (options.length ? '<label class="visually-hidden" for="swap-search">Search alternatives</label><input id="swap-search" class="swap-search" type="search" placeholder="Search alternatives…" autocomplete="off"><div id="swap-options" class="swap-list">' + options.map(function (option, index) {
           const lastDate = option.latestSets && option.latestSets.length ? option.latestSets[0].date : '';
-          return '<button class="swap-option" type="button" data-swap-index="' + index + '" data-swap-search="' + attr(option.name.toLowerCase()) + '"><span><strong>' + text(option.name) + '</strong><small>' + (lastDate ? 'Previous lift data available · ' + text(lastDate) : 'No previous lift data') + '</small></span><span aria-hidden="true">›</span></button>';
+          return '<button data-tour="swap-option" class="swap-option" type="button" data-swap-index="' + index + '" data-swap-search="' + attr(option.name.toLowerCase()) + '"><span><strong>' + text(option.name) + '</strong><small>' + (lastDate ? 'Previous lift data available · ' + text(lastDate) : 'No previous lift data') + '</small></span><span aria-hidden="true">›</span></button>';
         }).join('') + '</div><p id="swap-no-results" class="history-empty hidden">No alternatives match that search.</p>' : '<p class="history-empty">No unused ' + text(swap.primaryMuscle || 'matching') + ' alternatives are listed in Exercises.</p>') +
       '</section>');
       bindSwapModal();
@@ -5157,7 +5510,7 @@ if (typeof module !== 'undefined' && module.exports) {
       const preview = exercise.sets.map(function (set) {
         return '<li>' + swapSetSummary(set, latestSwapSet(option, set)) + '</li>';
       }).join('');
-      updateModal('<section class="bottom-sheet swap-sheet" role="dialog" aria-modal="true" aria-labelledby="swap-confirm-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Confirm swap</p><h2 id="swap-confirm-title">' + text(exercise.name) + ' → ' + text(option.name) + '</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Cancel swap">×</button></div><p class="confirm-copy">The set count, set numbers and set types stay the same. Weight, reps and RIR use the latest logged entry for this exercise where available, even if it came from another session. Unmatched values become blank and completion ticks reset.</p><ul class="swap-preview">' + preview + '</ul><div class="confirm-actions"><button id="back-to-swap-options" class="button" type="button">Back</button><button id="confirm-exercise-swap" class="button button-primary" type="button">Swap exercise</button></div></section>');
+      updateModal('<section class="bottom-sheet swap-sheet" role="dialog" aria-modal="true" aria-labelledby="swap-confirm-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Confirm swap</p><h2 id="swap-confirm-title">' + text(exercise.name) + ' → ' + text(option.name) + '</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Cancel swap">×</button></div><p class="confirm-copy">The set count, set numbers and set types stay the same. Weight, reps and RIR use the latest logged entry for this exercise where available, even if it came from another session. Unmatched values become blank and completion ticks reset.</p><ul class="swap-preview">' + preview + '</ul><div class="confirm-actions"><button id="back-to-swap-options" class="button" type="button">Back</button><button data-tour="confirm-exercise-swap" id="confirm-exercise-swap" class="button button-primary" type="button">Swap exercise</button></div></section>');
       document.getElementById('back-to-swap-options').addEventListener('click', renderSwapModal);
       document.getElementById('confirm-exercise-swap').addEventListener('click', function () { applyExerciseSwap(option); });
     }
@@ -5538,7 +5891,7 @@ if (typeof module !== 'undefined' && module.exports) {
       }, 0);
       const special = pendingOrSkip ? ' (including ' + pendingOrSkip + ' PENDING/SKIP)' : '';
       const unfinished = omitted ? ' <strong>' + omitted + ' unfinished set' + (omitted === 1 ? '' : 's') + '</strong> will not be written.' : '';
-      openModal('<section class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="complete-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Ready to save?</p><h2 id="complete-title">Complete ' + text(state.draft.sessionType) + '</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Cancel completion">×</button></div><p class="confirm-copy">This saves <strong>' + saveable + ' set entr' + (saveable === 1 ? 'y' : 'ies') + '</strong>' + special + ' for ' + text(state.draft.sessionType) + '.' + unfinished + (window.DEMO_BACKEND ? '' : ' It will appear in your existing Google Sheet.') + '</p><div class="confirm-actions"><button class="button" type="button" data-dismiss-modal>Keep logging</button><button id="confirm-complete" class="button button-primary" type="button">Complete workout</button></div></section>');
+      openModal('<section class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="complete-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Ready to save?</p><h2 id="complete-title">Complete ' + text(state.draft.sessionType) + '</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Cancel completion">×</button></div><p class="confirm-copy">This saves <strong>' + saveable + ' set entr' + (saveable === 1 ? 'y' : 'ies') + '</strong>' + special + ' for ' + text(state.draft.sessionType) + '.' + unfinished + (window.DEMO_BACKEND ? '' : ' It will appear in your existing Google Sheet.') + '</p><div class="confirm-actions"><button class="button" type="button" data-dismiss-modal>Keep logging</button><button data-tour="confirm-complete" id="confirm-complete" class="button button-primary" type="button">Complete workout</button></div></section>');
       document.getElementById('confirm-complete').addEventListener('click', completeWorkout);
     }
 
@@ -5708,7 +6061,7 @@ if (typeof module !== 'undefined' && module.exports) {
           '<strong>' + text(completionValue(item.sets)) + '</strong></div>';
       }).join('') : '<p class="completion-empty">No muscle allocations were recorded for this view.</p>';
       const weekLabel = summary.week == null ? 'Week' : 'Week ' + text(summary.week);
-      return '<section class="completion-panel" aria-labelledby="completion-distribution-title">' +
+      return '<section data-tour="training-distribution" class="completion-panel" aria-labelledby="completion-distribution-title">' +
         '<h2 id="completion-distribution-title">Training distribution</h2>' +
         '<div class="completion-switcher" role="tablist" aria-label="Training distribution period">' +
           '<button id="completion-session-tab" type="button" role="tab" aria-selected="' + (!weekView) + '">This workout</button>' +
