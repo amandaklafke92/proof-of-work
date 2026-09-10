@@ -3210,10 +3210,13 @@ if (typeof module !== 'undefined' && module.exports) {
     if (title) title.textContent = target('confirm-complete') ? 'Ready to save?' : 'Explore the workout';
     if (description) {
       description.textContent = target('confirm-complete')
-        ? 'Confirm the workout when you are ready to save it and see your workout stats.'
-        : 'Feel free to explore—check out History, add a note, or log more exercises. When you’re done, select Complete Workout to see your workout stats.';
+        ? 'The confirmation is ready if you decide to save your workout. Otherwise, you can finish the tour and keep browsing.'
+        : 'Feel free to explore—check out History, add a note, or log more exercises. Choose Finish tour when you’re done.';
     }
-    if (next) next.style.display = 'none';
+    if (next) {
+      next.style.display = '';
+      next.textContent = 'Finish tour';
+    }
   }
 
   function updateSwapPopover() {
@@ -3272,7 +3275,7 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 
   function finishTour() {
-    if (target('training-distribution') && tour) tour.destroy();
+    if (tour) tour.destroy();
   }
 
   function moveWhenReady(name, index) {
@@ -3332,12 +3335,17 @@ if (typeof module !== 'undefined' && module.exports) {
       disableActiveInteraction: false,
       showProgress: true,
       progressText: '{{current}} of {{total}}',
-      showButtons: ['close'],
+      showButtons: ['next', 'close'],
       popoverClass: 'workout-demo-tour',
       onDoneClick: finishTour,
       onHighlighted: function () {
         if (!tour) return;
         var index = tour.getActiveIndex();
+        if (index !== 4) {
+          var popover = document.querySelector('.driver-popover.workout-demo-tour');
+          var next = popover && popover.querySelector('.driver-popover-next-btn');
+          if (next) next.style.display = 'none';
+        }
         if (index === 3) window.setTimeout(updateSwapPopover, 0);
         if (index === 4) window.setTimeout(updateFinalPopover, 0);
       },
@@ -3383,7 +3391,7 @@ if (typeof module !== 'undefined' && module.exports) {
           waitForElement: 3000,
           popover: {
             title: 'Explore the workout',
-            description: 'Feel free to explore—check out History, add a note, or log more exercises. When you’re done, select Complete Workout to see your workout stats.',
+            description: 'Feel free to explore—check out History, add a note, or log more exercises. Choose Finish tour when you’re done.',
             side: 'top', align: 'center'
           }
         }
@@ -3529,12 +3537,12 @@ if (typeof module !== 'undefined' && module.exports) {
     const DELETE_SWIPE_THRESHOLD = 28;
     const SET_TYPES = ['W', 'D', 'WU', 'RP', 'PENDING', 'SKIP'];
     const SET_TYPE_OPTIONS = [
-      { value: 'W', label: 'Standard set', display: '1', description: 'Displays its set number · saves W' },
-      { value: 'WU', label: 'Warm-up set', display: 'WU', description: 'Displays WU · saves WU' },
-      { value: 'D', label: 'Drop set', display: 'D', description: 'Displays D · saves D' },
-      { value: 'RP', label: 'Rest-pause set', display: 'RP', description: 'Displays RP · saves RP' },
-      { value: 'PENDING', label: 'Pending', display: 'P', description: 'Displays P · saves PENDING' },
-      { value: 'SKIP', label: 'Skip', display: 'S', description: 'Displays S · saves SKIP' }
+      { value: 'W', label: 'Standard set', display: '1', description: 'A regular working set using your planned weight, reps and RIR.' },
+      { value: 'WU', label: 'Warm-up set', display: 'WU', description: 'A lighter preparation set before your working sets. It helps you get ready and does not count toward training volume.' },
+      { value: 'D', label: 'Drop set', display: 'D', description: 'Continue the set after reducing the weight, with little or no rest.' },
+      { value: 'RP', label: 'Rest-pause set', display: 'RP', description: 'Take a very short rest during a hard set, then continue for more reps with the same weight.' },
+      { value: 'PENDING', label: 'Pending', display: 'P', description: 'Use this when you want to do the exercise later this week. It removes the set from this session and makes it available as a Pending exercise.' },
+      { value: 'SKIP', label: 'Skip', display: 'S', description: 'Use this when you will not complete the exercise this week. It records the set as skipped.' }
     ];
     const state = {
       bootstrap: null,
