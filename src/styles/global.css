@@ -334,6 +334,18 @@ button {
   line-height: 1.4;
 }
 
+.reading-shell { width: min(100% - 32px, 680px); margin: 0 auto; padding: 38px 0 80px; }
+.reading-header { margin-bottom: 54px; }
+.reading-header > a { color: rgba(25, 25, 21, .58); font-family: Arial, Helvetica, sans-serif; font-size: .75rem; text-decoration: none; }
+.reading-header > p:not(.publication-note):not(.disclaimer) { margin: 52px 0 11px; color: rgba(25, 25, 21, .56); font-family: Arial, Helvetica, sans-serif; font-size: .6875rem; letter-spacing: .04em; text-transform: uppercase; }
+.reading-header h1 { margin: 0; font-size: clamp(2.35rem, 8vw, 4.25rem); font-weight: 400; letter-spacing: -.04em; line-height: .98; }
+.publication-note { margin: 20px 0 0; color: rgba(25,25,21,.62); font-size: .9375rem; line-height: 1.5; }
+.disclaimer { margin: 18px 0 0; padding: 12px 14px; border-left: 2px solid rgba(25,25,21,.22); background: #f3f2ed; color: rgba(25,25,21,.65); font-family: Arial, Helvetica, sans-serif; font-size: .6875rem; line-height: 1.5; }
+.story { font-size: clamp(1.0625rem, 2.6vw, 1.1875rem); line-height: 1.64; }
+.story p { margin: 0 0 1.35em; }
+.story-dinkus { margin: 2.8em 0 2.35em; color: #726d61; font-size: 1.65em; line-height: 1; text-align: center; }
+.letter { margin: 1.9em 0; padding-left: 1.3em; border-left: 1px solid rgba(25,25,21,.22); font-size: .92em; line-height: 1.55; }
+
 .empty-state {
   grid-column: 1 / -1;
   min-height: 220px;
