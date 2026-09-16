@@ -6,7 +6,7 @@
   <meta name="description" content="Building Flavour Lab: a cooking app for adapting familiar recipes, with product decisions, AI contracts and lessons from the build.">
   <title>Flavour Lab - Amanda Esnaola</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -21,15 +21,16 @@
     html {
       background: var(--bg);
       color: var(--ink);
-      font-family: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
-      font-size: 17px;
-      line-height: 1.78;
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 15px;
+      line-height: 1.72;
     }
     body { max-width: var(--max-w); margin: 0 auto; padding: 48px 24px 96px; }
     .back-link {
       display: inline-block;
       margin-bottom: 36px;
       color: var(--muted);
+      font-family: 'Times New Roman', Times, serif;
       font-size: 12px;
       letter-spacing: 0.07em;
       text-decoration: none;
@@ -37,16 +38,17 @@
     }
     .back-link:hover { color: var(--ink); }
     header { margin-bottom: 42px; padding-bottom: 22px; border-bottom: 1px solid var(--rule); }
-    h1 { margin-bottom: 14px; font-size: clamp(34px, 7vw, 48px); line-height: 1.1; letter-spacing: -0.02em; }
-    h2 { margin: 62px 0 22px; font-size: clamp(22px, 4vw, 28px); line-height: 1.2; }
+    h1 { margin-bottom: 14px; font-size: clamp(30px, 6vw, 40px); line-height: 1.1; letter-spacing: -0.02em; }
+    h2 { margin: 56px 0 20px; font-size: clamp(19px, 3.5vw, 23px); line-height: 1.2; }
     p { margin-bottom: 22px; }
-    .lede { font-size: 19px; line-height: 1.7; }
+    .lede { font-size: 16.5px; line-height: 1.65; }
     .meta-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
     .meta-tag {
       border: 1px solid var(--rule);
       border-radius: 20px;
       padding: 2px 8px;
       color: var(--muted);
+      font-family: 'Times New Roman', Times, serif;
       font-size: 9.5px;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -66,7 +68,7 @@
       border-radius: 10px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.10);
     }
-    figcaption { margin-top: 10px; color: var(--muted); font-size: 13px; font-style: italic; }
+    figcaption { margin-top: 10px; color: var(--muted); font-size: 12px; font-style: italic; }
     .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 30px 0 8px; }
     .button {
       display: inline-flex;
@@ -77,6 +79,7 @@
       border-radius: 999px;
       padding: 8px 16px;
       color: var(--ink);
+      font-family: 'Times New Roman', Times, serif;
       font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.07em;
@@ -88,6 +91,7 @@
       display: inline-block;
       margin-top: 10px;
       color: var(--accent);
+      font-family: 'Times New Roman', Times, serif;
       font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.07em;
@@ -116,14 +120,14 @@
       padding: 2px 6px;
       color: var(--ink);
       font-family: 'DM Mono', 'Courier New', monospace;
-      font-size: 13.5px;
+      font-size: 12.5px;
     }
     footer {
       margin-top: 72px;
       padding-top: 24px;
       border-top: 1px solid var(--rule);
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12px;
       font-style: italic;
     }
     @media (max-width: 600px) {
@@ -140,7 +144,7 @@
   </style>
 </head>
 <body>
-  <a class="back-link" href="../">Back to proof of work</a>
+  <a class="back-link" href="../">Back</a>
   <header>
     <h1>Flavour Lab</h1>
     <div class="meta-tags">
