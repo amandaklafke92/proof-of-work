@@ -1,20 +1,25 @@
 # Proof of Work
 
-A small public portfolio index of my selected projects.
+[View the live portfolio](https://amandaklafke92.github.io/proof-of-work/)
 
-This repo holds a modest collection of write-ups, demos and selected assets, and the thinking behind each one: problem framing, product choices, AI collaboration patterns, and practical execution.
+Source files for my portfolio of selected projects. The portfolio homepage
+(`index.html`) presents the projects and links to their case studies and demos.
+This README is a guide to maintaining the repository.
 
-## Published Projects
+## Editing the portfolio
 
-- **Personal OS** - a long-form case study about building a file-based operating
-  system for AI-assisted work, context management, and project continuity.
-- **Workout Tracker** - a short case study and static demo of a private
-  Google Sheets and Apps Script workout system with a mobile-first interface.
-- **Flavour Lab** - a cooking up that offers small adaptations to users' recipes, explained with AI generated bite-sized food science - coming soon
+- `index.html` — edit the homepage and its project links.
+- `personal-os/`, `workout-tracker/`, `flavour-lab/` — each project's `index.html`
+  contains its case study; supporting screenshots and demos live alongside it.
 
-## Structure
+The site uses static HTML, CSS and JavaScript. No build step is required.
 
-- `index.html` - landing page for the portfolio.
-- `personal-os/` - Personal OS case study and assets.
-- `workout-tracker/` - Workout Tracker case study, assets, and demo.
-- `NOTES.md` - working notes for future additions.
+## Public content boundary
+
+Workout Tracker demo data may include workout names, weights, volumes and
+related training metrics; these are approved for public use.
+
+Do not publish credentials, private source repositories, live Google Sheet
+links, raw project logs, raw research material, meeting notes, unrelated
+personal records, third-party private material or other user data unless
+Amanda has explicitly approved that specific material for public use.

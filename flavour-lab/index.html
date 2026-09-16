@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Building Flavour Lab: a cooking app for adapting familiar recipes, with product decisions, AI contracts and lessons from the build.">
+  <title>Flavour Lab - Amanda Esnaola</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #ffffff;
+      --ink: #1e1b17;
+      --muted: #7d7260;
+      --rule: #cfc5b0;
+      --code-bg: #eee9de;
+      --accent: #8a7558;
+      --max-w: 700px;
+    }
+    html {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
+      font-size: 17px;
+      line-height: 1.78;
+    }
+    body { max-width: var(--max-w); margin: 0 auto; padding: 48px 24px 96px; }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 36px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.07em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+    .back-link:hover { color: var(--ink); }
+    header { margin-bottom: 42px; padding-bottom: 22px; border-bottom: 1px solid var(--rule); }
+    h1 { margin-bottom: 14px; font-size: clamp(34px, 7vw, 48px); line-height: 1.1; letter-spacing: -0.02em; }
+    h2 { margin: 62px 0 22px; font-size: clamp(22px, 4vw, 28px); line-height: 1.2; }
+    p { margin-bottom: 22px; }
+    .lede { font-size: 19px; line-height: 1.7; }
+    .meta-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+    .meta-tag {
+      border: 1px solid var(--rule);
+      border-radius: 20px;
+      padding: 2px 8px;
+      color: var(--muted);
+      font-size: 9.5px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    figure { margin: 36px 0; }
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin: 36px 0;
+    }
+    .screenshot-grid figure { margin: 0; }
+    figure img {
+      display: block;
+      width: 100%;
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    }
+    figcaption { margin-top: 10px; color: var(--muted); font-size: 13px; font-style: italic; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 30px 0 8px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      padding: 8px 16px;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+    .button.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+    .asset-link {
+      display: inline-block;
+      margin-top: 10px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+    .asset-link:hover { color: var(--ink); }
+    .interactive-frame {
+      width: 100%;
+      height: 720px;
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      background: #f7f8f4;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+    }
+    .decision-list { list-style: none; margin: 24px 0; }
+    .decision-list li {
+      margin-bottom: 18px;
+      padding-left: 18px;
+      border-left: 3px solid var(--accent);
+    }
+    .decision-list strong { display: block; margin-bottom: 4px; }
+    code {
+      border-radius: 3px;
+      background: var(--code-bg);
+      padding: 2px 6px;
+      color: var(--ink);
+      font-family: 'DM Mono', 'Courier New', monospace;
+      font-size: 13.5px;
+    }
+    footer {
+      margin-top: 72px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+      color: var(--muted);
+      font-size: 13px;
+      font-style: italic;
+    }
+    @media (max-width: 600px) {
+      body { padding: 34px 20px 80px; }
+      .cta-row { display: grid; }
+      .screenshot-grid { grid-template-columns: 1fr; }
+      .interactive-frame { height: 760px; }
+    }
+
+    .decision-copy { border-left: 3px solid var(--accent); padding-left: 18px; }
+    .decision-copy strong { display: block; }
+    .screenshot-note { color: var(--muted); font-size: 12px; }
+    .screenshot-grid img { height: auto; }
+  </style>
+</head>
+<body>
+  <a class="back-link" href="../">Back to proof of work</a>
+  <header>
+    <h1>Flavour Lab</h1>
+    <div class="meta-tags">
+      <span class="meta-tag">AI Product Design</span>
+      <span class="meta-tag">Cooking</span>
+      <span class="meta-tag">Mobile Web App</span>
+    </div>
+    <p class="lede">A cooking app for making something different out of a recipe you already know, with a little explanation of why the change works.</p>
+  </header>
+  <main>
+  <section>
+    <h2>What I Was Solving</h2>
+    <p>I get bored of eating the same thing on repeat, but I don't want to spend a lot of time in the kitchen or rack my brain trying to invent an entirely new dish every time I want variety. I make the same base dishes — mince with onion, garlic and tomato paste, for example — and know there is potential to turn them into something that feels different. I just don't always know which changes to make, beyond mixing up the condiments.</p>
+    <p>I know how to follow a recipe, and have some memorised. But knowing how to make a dish is different from knowing how to change it. Looking for a new recipe also means more decisions: would I like it, do I have the ingredients, and what would I need to buy? Often I just make the same version again.</p>
+    <p>Flavour Lab came out of that frustration. I wanted a way to get more variety from what I already cook, and to gradually understand why a change works so I could become less dependent on recipes in the first place.</p>
+  </section>
+
+  <section>
+    <h2>What I Built</h2>
+    <p>You start with a recipe, choose an experience — Comforting, Light &amp; Fresh, Indulgent, or Nourishing — and choose the kind of change you want to make. The app suggests five adaptations, explains them, and turns the one you select into a complete recipe.</p>
+    <p>We built the first version with AI assistance. My focus was the product thinking and the AI layer: the prompts, rules and structured data that turn a recipe and someone's preferences into useful suggestions. I am now continuing the build independently, including the integration, evaluation and interface refinements.</p>
+    <div class="screenshot-grid">
+      <figure>
+        <a href="assets/experience-selection.png"><img src="assets/experience-selection.png" width="860" height="1864" alt="Flavour Lab experience selection with Comforting, Light and Fresh, Indulgent, and Nourishing options"></a>
+        <figcaption>Start with how you want the dish to feel.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/suggestions.png"><img src="assets/suggestions.png" width="860" height="1864" alt="Flavour Lab suggestions for a nourishing chicken stew, with practical changes and short explanations"></a>
+        <figcaption>Small changes, with an explanation of why each one works.</figcaption>
+      </figure>
+    </div>
+    <p class="screenshot-note">Screenshots from the newer local interface, using illustrative demo suggestions. The live app may look different.</p>
+    <div class="cta-row"><a class="button primary" href="https://flavour-lab-nine.vercel.app/" target="_blank" rel="noopener noreferrer">Try Flavour Lab ↗</a></div>
+  </section>
+
+  <section>
+    <h2>Working With Camila</h2>
+    <p>I worked on the first version with my friend Camila, who built the initial frontend and helped map the flow between the interface and the AI layer. Her work covered the screens themselves, the visual and content systems, and the details between steps: what appears while a request is loading, what happens when it fails, and how someone moves through the recipe flow.</p>
+    <p>My side was what we loosely called the “backend”, although much of the work was defining the AI's behaviour and the information exchanged with it. We used payload schemas — agreed structures for the data sent and returned — alongside rules for what each response should contain. That gave the frontend and the AI layer a shared contract to work from.</p>
+    <p>The deployed app does also have a small server-side layer. It assembles the instructions, calls the model securely and checks the response before returning it to the interface. The schemas describe that exchange; the server code carries it out.</p>
+  </section>
+
+  <section>
+   <h2>The Decisions Behind It</h2>
+   <div class="decision-copy">
+    <p><strong>Give a vague preference some structure.</strong>“More comforting” is easy to ask for and surprisingly hard to define. The app pairs the chosen experience with a specific kind of change, then supplies the relevant part of the culinary framework to the model.</p>
+    <p><strong>Keep the change small enough to understand.</strong>Five suggestions give the cook options, but only one goes into the adapted recipe. That keeps the connection between the choice and its effect easier to follow.</p>
+    <p><strong>Treat the explanation as part of the product.</strong>I want someone to leave with a little more cooking intuition. That also raises the bar: an explanation needs to be useful and defensible, not just sound convincing.</p>
+   </div>
+  </section>
+
+  <section>
+   <h2>What Has Been Hard</h2>
+   <p>Getting the app to return a well-formed response is only one part of the problem. A suggestion can fit the required format and still be impractical, poorly explained, or a weak match for the experience the cook chose. I have been separating those technical checks from evaluations of the actual content.</p>
+   <p>Waiting is another product problem. In one end-to-end Preview test, suggestions took about 18 seconds. I have since implemented progressive loading locally so people can start reading complete suggestions as they arrive. It still needs live verification; I am not treating it as a proven speed improvement.</p>
+  </section>
+
+  <section>
+   <h2>What I Still Need to Learn</h2>
+   <p>The connected MVP works in Preview. The more important question is whether people actually cook with a suggestion and find it worth repeating. I also want to learn when they would use it: while deciding what to cook, or earlier when planning and shopping.</p>
+   <p>That is the next test. A successful AI response is useful evidence that the system runs; it does not yet tell me that the product earns a place in someone’s kitchen.</p>
+  </section>
+  </main>
+  <footer>Amanda Esnaola · Flavour Lab · Work in progress</footer>
+</body>
+</html>
