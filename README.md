@@ -1,16 +1,14 @@
 # Proof of Work
 
-A small public portfolio index of my selected projects.
-
-This repo holds a modest collection of write-ups, demos and selected assets, and the thinking behind each one: problem framing, product choices, AI collaboration patterns, and practical execution.
+A modest collection of selected projects, with accompanying write-ups, demo apps and/or production builds.
 
 ## Published Projects
 
-- **Personal OS** - a long-form case study about building a file-based operating
+- **Personal OS**: a long-form case study about building a file-based operating
   system for AI-assisted work, context management, and project continuity.
-- **Workout Tracker** - a short case study and static demo of a private
+- **Workout Tracker**: a short case study and static demo of a private
   Google Sheets and Apps Script workout system with a mobile-first interface.
-- **Flavour Lab** - a cooking up that offers small adaptations to users' recipes, explained with AI generated bite-sized food science - coming soon
+- **Flavour Lab**: a cooking app that offers small adaptations to users' recipes, with a bite-sized side of food science to help build cooking intuition
 
 ## Structure
 
