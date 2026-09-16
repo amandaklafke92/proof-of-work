@@ -139,8 +139,15 @@
   .icon-button { width: 42px; min-width: 42px; min-height: 42px; border-radius: 50%; padding: 0; }
   .setup-actions { margin-top: 14px; display: flex; gap: 10px; }
 
-  .workout-header { padding: 13px 16px 7px; border-bottom: 1px solid rgba(216, 225, 218, .72); }
+  .workout-header { padding: max(10px, env(safe-area-inset-top)) 12px 7px; border-bottom: 1px solid rgba(216, 225, 218, .72); }
   .workout-header .topbar-row { align-items: center; }
+  .session-utility-bar { display: flex; align-items: center; justify-content: flex-start; gap: 2px; min-height: 42px; }
+  .session-utility-button { display: grid; width: 42px; min-width: 42px; min-height: 42px; place-items: center; border: 0; border-radius: 50%; padding: 0; background: transparent; color: var(--ink); font-size: 25px; line-height: 1; }
+  .session-utility-button:hover { background: var(--surface-soft); }
+  .session-options-trigger { font-size: 24px; font-weight: 700; }
+  .session-menu-icon { width: 20px; display: grid; gap: 4px; }
+  .session-menu-icon span { display: block; height: 2px; border-radius: 2px; background: currentColor; }
+  .session-timer { min-width: 7ch; color: var(--ink); font-size: 16px; font-variant-numeric: tabular-nums; font-weight: 650; line-height: 1; }
   .workout-context { min-width: 0; display: grid; grid-template-columns: auto 1fr; grid-template-areas: "label label" "session meta"; column-gap: 9px; align-items: center; }
   .workout-context .eyebrow { grid-area: label; }
   .session-heading { grid-area: session; display: inline-flex; align-items: center; margin: 0; }
@@ -153,6 +160,25 @@
   .summary-strip { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
   .summary-chip { background: transparent; border: 0; border-radius: 0; padding: 0; color: var(--muted); font-size: 10px; font-weight: 500; }
   .summary-chip + .summary-chip::before { content: "·"; padding-right: 5px; }
+  .session-options { display: grid; margin-top: 9px; }
+  .session-option { width: 100%; min-height: 66px; display: grid; grid-template-columns: 38px 1fr 18px; gap: 11px; align-items: center; border: 0; border-bottom: 1px solid var(--line); padding: 10px 2px; background: transparent; color: var(--ink); text-align: left; }
+  .session-option:disabled { cursor: not-allowed; opacity: .5; }
+  .session-option strong { display: block; font-size: 14px; }
+  .session-option small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+  .session-option-icon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px; background: var(--surface-soft); color: var(--accent-deep); font-size: 18px; }
+  .session-option-pencil { transform: scaleX(-1); }
+  .session-option-feedback { position: relative; border-radius: 50%; font-size: 16px; line-height: .6; }
+  .session-option-feedback::after { content: ""; position: absolute; bottom: 2px; left: 2px; width: 8px; height: 8px; background: var(--surface-soft); clip-path: polygon(0 100%, 100% 0, 100% 100%); }
+  .session-option-arrow { color: var(--muted); font-size: 21px; }
+  .session-option-danger { color: var(--danger); }
+  .session-option-danger .session-option-icon { background: var(--danger-soft); color: var(--danger); }
+  .session-option-danger small, .session-option-danger .session-option-arrow { color: #b06060; }
+  .feedback-sheet { max-width: 520px; }
+  .feedback-type-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 12px 0 14px; }
+  .feedback-type { min-height: 42px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--muted); font: inherit; font-size: 13px; font-weight: 700; }
+  .feedback-type.is-selected { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .feedback-note-field { margin-top: 0; }
+  .feedback-error { margin: 10px 0 0; color: var(--danger); font-size: 12px; line-height: 1.4; }
   .exercise-intro { padding: 17px 16px 6px; }
   .exercise-intro h1 { max-width: 390px; }
   .exercise-progress { margin: 0; color: var(--muted); font-size: 14px; }
@@ -2058,6 +2084,8 @@ if (typeof module !== 'undefined' && module.exports) {
 (function () {
   var SEED = window.DEMO_SEED;
   var STORAGE_KEY = 'workout-tracker-demo/v1/' + (SEED && SEED.seedHash || 'dev');
+  var SESSION_TIMER_STORAGE_PREFIX = 'workout-tracker-session-timer/v1/';
+  var SESSION_DURATION_RETRY_PREFIX = 'workout-tracker-session-duration-retry/v1/';
 
   // ── storage ────────────────────────────────────────────────────────────────
 
@@ -2070,6 +2098,7 @@ if (typeof module !== 'undefined' && module.exports) {
     // ?reset is handled here rather than in demo/shell.js so it lands before the
     // first read, whatever order the page's scripts end up in.
     if (/[?&]reset\b/.test(window.location.search)) {
+      clearDemoTimerStorage();
       try { window.localStorage.removeItem(STORAGE_KEY); } catch (error) {}
       try {
         window.history.replaceState(null, '', window.location.pathname + window.location.hash);
@@ -2093,8 +2122,21 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 
   function resetStore() {
+    clearDemoTimerStorage();
     try { window.localStorage.removeItem(STORAGE_KEY); } catch (error) {}
     store = clone(SEED);
+  }
+
+  function clearDemoTimerStorage() {
+    try {
+      for (var index = window.localStorage.length - 1; index >= 0; index -= 1) {
+        var key = window.localStorage.key(index);
+        if (key && (key.indexOf(SESSION_TIMER_STORAGE_PREFIX) === 0
+            || key.indexOf(SESSION_DURATION_RETRY_PREFIX) === 0)) {
+          window.localStorage.removeItem(key);
+        }
+      }
+    } catch (error) {}
   }
 
   store = hydrate();
@@ -2720,6 +2762,71 @@ if (typeof module !== 'undefined' && module.exports) {
     }
   }
 
+  function demoSessionTimer(input) {
+    var kind = String(input.kind || '').trim().toLowerCase();
+    var draftId = String(input.draftId || '').trim();
+    var identity = input.sessionIdentity || {};
+    if ((kind !== 'workout' && kind !== 'cardio') || !draftId
+        || !ymd(identity.date)
+        || (kind === 'workout' && !String(identity.sessionType || '').trim())
+        || (kind === 'cardio' && !String(identity.activity || '').trim())) {
+      throw demoError(CODES.VALIDATION_FAILED, 'The session timer details are incomplete.', false);
+    }
+    if (!store.sessionTimers) store.sessionTimers = {};
+    var existing = store.sessionTimers[draftId];
+    if (existing) {
+      if (existing.kind !== kind) {
+        throw demoError(CODES.DRAFT_CONFLICT, 'This draft timer belongs to a different session.', false);
+      }
+      return existing;
+    }
+    var timer = {
+      schemaVersion: 1,
+      draftId: draftId,
+      kind: kind,
+      startedAt: new Date().toISOString(),
+      sessionIdentity: clone(identity)
+    };
+    store.sessionTimers[draftId] = timer;
+    persist();
+    return timer;
+  }
+
+  function recordDemoSessionDuration(input) {
+    var identity = input.completionIdentity || {};
+    var timer = demoSessionTimer({
+      kind: identity.kind,
+      draftId: identity.draftId,
+      sessionIdentity: identity.sessionIdentity
+    });
+    var submissionId = String(identity.submissionId || '').trim();
+    var durationMinutes = Number(input.durationMinutes);
+    if (!submissionId || !String(input.idempotencyKey || '').trim()
+        || !Number.isInteger(durationMinutes) || durationMinutes < 0) {
+      throw demoError(CODES.VALIDATION_FAILED, 'The session duration details are incomplete.', false);
+    }
+    if (!store.sessionDurationRecords) store.sessionDurationRecords = {};
+    var recordKey = timer.kind + '/' + timer.draftId + '/' + submissionId;
+    var existing = store.sessionDurationRecords[recordKey];
+    if (existing && existing.durationMinutes !== durationMinutes) {
+      throw demoError(CODES.DRAFT_CONFLICT, 'A different duration is already recorded for this session.', false);
+    }
+    store.sessionDurationRecords[recordKey] = {
+      durationMinutes: durationMinutes,
+      recordedAt: new Date().toISOString()
+    };
+    delete store.sessionTimers[timer.draftId];
+    persist();
+    return {
+      recorded: true,
+      replayed: !!existing,
+      kind: timer.kind,
+      draftId: timer.draftId,
+      durationMinutes: durationMinutes,
+      idempotencyKey: String(input.idempotencyKey)
+    };
+  }
+
   var HANDLERS = {
 
     webGetBootstrap: function () {
@@ -2825,6 +2932,23 @@ if (typeof module !== 'undefined' && module.exports) {
         discarded: true, draftId: draftId,
         revision: (isFinite(revision) ? revision : 0) + 1, todayPreserved: false
       };
+    },
+
+    webSubmitFeedback: function (input) {
+      var type = String(input.type || '');
+      var note = String(input.note || '').trim();
+      if (['bug', 'feedback', 'idea'].indexOf(type) < 0 || !note) {
+        throw demoError(CODES.VALIDATION_FAILED, 'Add a type and note before sending feedback.', false);
+      }
+      return { issueNumber: 1, issueUrl: 'https://github.com/amandaklafke92/workout-tracker-source/issues/1' };
+    },
+
+    webStartSessionTimer: function (input) {
+      return clone(demoSessionTimer(input));
+    },
+
+    webRecordSessionDuration: function (input) {
+      return recordDemoSessionDuration(input);
     },
 
     webCompleteWorkout: function (input) {
@@ -3535,6 +3659,8 @@ if (typeof module !== 'undefined' && module.exports) {
     const PENDING_SESSION_TYPE = 'PENDING';
     const DELETE_SWIPE_WIDTH = 78;
     const DELETE_SWIPE_THRESHOLD = 28;
+    const SESSION_TIMER_STORAGE_PREFIX = 'workout-tracker-session-timer/v1/';
+    const SESSION_DURATION_RETRY_PREFIX = 'workout-tracker-session-duration-retry/v1/';
     const SET_TYPES = ['W', 'D', 'WU', 'RP', 'PENDING', 'SKIP'];
     const SET_TYPE_OPTIONS = [
       { value: 'W', label: 'Standard set', display: '1', description: 'A regular working set using your planned weight, reps and RIR.' },
@@ -3558,9 +3684,11 @@ if (typeof module !== 'undefined' && module.exports) {
       completionView: 'session',
       history: null,
       historyLoading: false,
+      historyRequestId: 0,
       swap: null,
       swapLoading: false,
       swapRequestId: 0,
+      swapSupport: null,
       addExercise: null,
       addExerciseLoading: false,
       addExerciseRequestId: 0,
@@ -3572,7 +3700,6 @@ if (typeof module !== 'undefined' && module.exports) {
       checkpointBlocked: false,
       dirty: false,
       workoutEdited: false,
-      sessionSwitching: false,
       dashboardLoading: false,
       dashboardAdvancing: false,
       dashboardAdvanceConfirm: false,
@@ -3585,6 +3712,15 @@ if (typeof module !== 'undefined' && module.exports) {
       setupDefaultsRequest: 0,
       submissionId: null,
       sheetHandoff: false,
+      feedback: null,
+      sessionTimerKey: '',
+      sessionTimerStartedAt: null,
+      sessionTimerStoppedAt: null,
+      sessionTimerInterval: null,
+      sessionTimerCanonical: false,
+      sessionTimerStartKey: '',
+      sessionTimerStartPromise: null,
+      durationRetryRunning: false,
       previousBySetId: {},
       exerciseCueBaselines: {},
       sheetUrl: window.WEB_APP_SHEET_URL || ''
@@ -3636,6 +3772,316 @@ if (typeof module !== 'undefined' && module.exports) {
       return new Date(now - timezoneOffset).toISOString().slice(0, 10);
     }
 
+    function sessionTimerStorageKey(kind, draft) {
+      return draft && draft.draftId
+        ? SESSION_TIMER_STORAGE_PREFIX + kind + '/' + String(draft.draftId)
+        : '';
+    }
+
+    function readSessionTimer(key) {
+      if (!key) return null;
+      try {
+        const value = JSON.parse(window.localStorage.getItem(key));
+        if (!value || value.canonical !== true
+            || !Number.isFinite(Number(value.startedAt))) return null;
+        return {
+          startedAt: Number(value.startedAt),
+          // A stopped state is intentionally page-local. If the browser closes
+          // during a failed completion request, an active server draft should
+          // resume its timer when the app reopens.
+          stoppedAt: null,
+          canonical: true
+        };
+      } catch (error) { return null; }
+    }
+
+    function writeSessionTimer() {
+      if (!state.sessionTimerKey || !Number.isFinite(state.sessionTimerStartedAt)) return;
+      try {
+        window.localStorage.setItem(state.sessionTimerKey, JSON.stringify({
+          startedAt: state.sessionTimerStartedAt,
+          canonical: state.sessionTimerCanonical === true
+        }));
+      } catch (error) {}
+    }
+
+    function sessionTimerIdentity(kind, draft) {
+      if (kind === 'cardio') {
+        return { date: draft.date, activity: draft.activity };
+      }
+      return { date: draft.date, sessionType: draft.sessionType };
+    }
+
+    function startCanonicalSessionTimer(kind, draft, key) {
+      if (!draft || !draft.draftId || !key) return Promise.resolve(null);
+      if (state.sessionTimerStartKey === key && state.sessionTimerStartPromise) {
+        return state.sessionTimerStartPromise;
+      }
+      state.sessionTimerStartKey = key;
+      state.sessionTimerStartPromise = rpc('webStartSessionTimer', {
+        clientRequestId: clientRequestId('session-timer-start'),
+        kind: kind,
+        draftId: draft.draftId,
+        sessionIdentity: sessionTimerIdentity(kind, draft)
+      }).then(function (response) {
+        const startedAt = new Date(response.data && response.data.startedAt).getTime();
+        if (!Number.isFinite(startedAt)) return null;
+        if (state.sessionTimerKey === key) {
+          state.sessionTimerStartedAt = startedAt;
+          state.sessionTimerCanonical = true;
+          writeSessionTimer();
+          updateSessionTimerDisplay();
+        }
+        return Object.assign({}, response.data, { startedAtMs: startedAt });
+      }).catch(function () {
+        // Timing is optional. The local display keeps running and workout use
+        // remains fully available when the canonical timer cannot start.
+        return null;
+      });
+      return state.sessionTimerStartPromise;
+    }
+
+    function ensureSessionTimer(kind, draft) {
+      const key = sessionTimerStorageKey(kind, draft);
+      if (!key) return;
+      if (state.sessionTimerKey !== key) {
+        if (state.sessionTimerInterval) window.clearInterval(state.sessionTimerInterval);
+        state.sessionTimerInterval = null;
+        const stored = readSessionTimer(key);
+        const now = Date.now();
+        state.sessionTimerKey = key;
+        state.sessionTimerStartedAt = stored && stored.startedAt > 0 && stored.startedAt <= now
+          ? stored.startedAt : now;
+        state.sessionTimerStoppedAt = stored && stored.stoppedAt >= state.sessionTimerStartedAt
+          ? stored.stoppedAt : null;
+        state.sessionTimerCanonical = !!(stored && stored.canonical);
+        writeSessionTimer();
+      }
+      startCanonicalSessionTimer(kind, draft, key);
+      if (!state.sessionTimerStoppedAt && !state.sessionTimerInterval) {
+        state.sessionTimerInterval = window.setInterval(updateSessionTimerDisplay, 1000);
+      }
+    }
+
+    function sessionTimerElapsedSeconds() {
+      if (!Number.isFinite(state.sessionTimerStartedAt)) return 0;
+      const end = Number.isFinite(state.sessionTimerStoppedAt) ? state.sessionTimerStoppedAt : Date.now();
+      return Math.max(0, Math.floor((end - state.sessionTimerStartedAt) / 1000));
+    }
+
+    function sessionTimerText() {
+      const total = sessionTimerElapsedSeconds();
+      const hours = Math.floor(total / 3600);
+      const minutes = Math.floor(total % 3600 / 60);
+      const seconds = total % 60;
+      return hours + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    }
+
+    function updateSessionTimerDisplay() {
+      const timer = document.getElementById('session-timer');
+      if (timer) timer.textContent = sessionTimerText();
+    }
+
+    function pauseSessionTimer(kind, draft) {
+      ensureSessionTimer(kind, draft);
+      if (!state.sessionTimerKey || state.sessionTimerStoppedAt) return;
+      state.sessionTimerStoppedAt = Date.now();
+      if (state.sessionTimerInterval) window.clearInterval(state.sessionTimerInterval);
+      state.sessionTimerInterval = null;
+      writeSessionTimer();
+      updateSessionTimerDisplay();
+    }
+
+    function resumeSessionTimer(kind, draft) {
+      ensureSessionTimer(kind, draft);
+      if (!state.sessionTimerKey || !state.sessionTimerStoppedAt) return;
+      state.sessionTimerStoppedAt = null;
+      writeSessionTimer();
+      state.sessionTimerInterval = window.setInterval(updateSessionTimerDisplay, 1000);
+      updateSessionTimerDisplay();
+    }
+
+    function clearSessionTimer(kind, draft) {
+      const key = sessionTimerStorageKey(kind, draft);
+      if (key) {
+        try { window.localStorage.removeItem(key); } catch (error) {}
+      }
+      if (state.sessionTimerKey !== key) return;
+      if (state.sessionTimerInterval) window.clearInterval(state.sessionTimerInterval);
+      state.sessionTimerKey = '';
+      state.sessionTimerStartedAt = null;
+      state.sessionTimerStoppedAt = null;
+      state.sessionTimerInterval = null;
+      state.sessionTimerCanonical = false;
+      state.sessionTimerStartKey = '';
+      state.sessionTimerStartPromise = null;
+    }
+
+    function durationWarning(kind) {
+      return (kind === 'cardio' ? 'Cardio' : 'Workout')
+        + ' saved, but duration couldn\'t be recorded.';
+    }
+
+    function durationRetryStorageKey(idempotencyKey) {
+      return SESSION_DURATION_RETRY_PREFIX + idempotencyKey;
+    }
+
+    function writeDurationRetry(record) {
+      try {
+        window.localStorage.setItem(
+          durationRetryStorageKey(record.idempotencyKey), JSON.stringify(record)
+        );
+        return true;
+      } catch (error) { return false; }
+    }
+
+    function deleteDurationRetry(record) {
+      try {
+        window.localStorage.removeItem(durationRetryStorageKey(record.idempotencyKey));
+      } catch (error) {}
+    }
+
+    function durationRetryRecords() {
+      const records = [];
+      try {
+        for (let index = 0; index < window.localStorage.length; index++) {
+          const key = window.localStorage.key(index);
+          if (!key || key.indexOf(SESSION_DURATION_RETRY_PREFIX) !== 0) continue;
+          try {
+            const record = JSON.parse(window.localStorage.getItem(key));
+            if (record && record.schemaVersion === 1 && record.completionIdentity
+                && Number.isInteger(record.durationMinutes) && record.idempotencyKey) {
+              records.push(record);
+            }
+          } catch (error) {}
+        }
+      } catch (error) {}
+      return records;
+    }
+
+    function submitDurationRecord(record) {
+      return rpc('webRecordSessionDuration', {
+        clientRequestId: clientRequestId('session-duration'),
+        completionIdentity: record.completionIdentity,
+        durationMinutes: record.durationMinutes,
+        idempotencyKey: record.idempotencyKey
+      });
+    }
+
+    function sessionTimerDeadline(promise, timeoutMs) {
+      return Promise.race([
+        promise,
+        new Promise(function (_, reject) {
+          window.setTimeout(function () {
+            reject({ code: 'TIMER_TIMEOUT', message: 'Optional timer request timed out.' });
+          }, timeoutMs);
+        })
+      ]);
+    }
+
+    async function retryPendingDurationRecords() {
+      if (state.durationRetryRunning) return;
+      const records = durationRetryRecords();
+      if (!records.length) return;
+      state.durationRetryRunning = true;
+      try {
+        for (let index = 0; index < records.length; index++) {
+          try {
+            await submitDurationRecord(records[index]);
+            deleteDurationRetry(records[index]);
+          } catch (error) {
+            // Retrying is deliberately quiet. The completed workout remains
+            // authoritative and this queue can try again on the next load.
+          }
+        }
+      } finally {
+        state.durationRetryRunning = false;
+      }
+    }
+
+    async function recordCompletedSessionDuration(kind, draft, completed) {
+      const key = sessionTimerStorageKey(kind, draft);
+      const stoppedAt = state.sessionTimerKey === key
+        && Number.isFinite(state.sessionTimerStoppedAt)
+        ? state.sessionTimerStoppedAt : null;
+      let startedAt = state.sessionTimerKey === key && state.sessionTimerCanonical === true
+        && Number.isFinite(state.sessionTimerStartedAt)
+        ? state.sessionTimerStartedAt : null;
+      const startPromise = state.sessionTimerStartKey === key
+        ? state.sessionTimerStartPromise : null;
+      if (!Number.isFinite(startedAt) && startPromise) {
+        const canonical = await sessionTimerDeadline(startPromise, 4000);
+        if (canonical && Number.isFinite(canonical.startedAtMs)) {
+          startedAt = canonical.startedAtMs;
+        }
+      }
+      if (!Number.isFinite(startedAt) || !Number.isFinite(stoppedAt)) {
+        clearSessionTimer(kind, draft);
+        completed.durationWarning = durationWarning(kind);
+        return false;
+      }
+      const record = {
+        schemaVersion: 1,
+        completionIdentity: {
+          kind: kind,
+          draftId: draft.draftId,
+          submissionId: completed.submissionId || state.submissionId,
+          sessionIdentity: sessionTimerIdentity(kind, draft)
+        },
+        durationMinutes: Math.round(
+          Math.max(0, stoppedAt - startedAt) / 60000
+        ),
+        idempotencyKey: clientRequestId('duration-record')
+      };
+      writeDurationRetry(record);
+      try {
+        await sessionTimerDeadline(submitDurationRecord(record), 8000);
+        deleteDurationRetry(record);
+        clearSessionTimer(kind, draft);
+        completed.sessionDurationMinutes = record.durationMinutes;
+        return true;
+      } catch (error) {
+        clearSessionTimer(kind, draft);
+        completed.durationWarning = durationWarning(kind);
+        return false;
+      }
+    }
+
+    function finishDurationRecording(kind, draft, completed) {
+      recordCompletedSessionDuration(kind, draft, completed).then(function (recorded) {
+        if (!recorded && state.saved === completed) renderSaved();
+      }).catch(function () {
+        clearSessionTimer(kind, draft);
+        completed.durationWarning = durationWarning(kind);
+        if (state.saved === completed) renderSaved();
+      });
+    }
+
+    function durationWarningHtml(saved) {
+      return saved && saved.durationWarning
+        ? '<div class="status-banner warning" role="status"><span>'
+          + text(saved.durationWarning)
+          + '</span><button id="dismiss-duration-warning" class="button" type="button">Dismiss</button></div>'
+        : '';
+    }
+
+    function bindDurationWarning(saved) {
+      const dismiss = document.getElementById('dismiss-duration-warning');
+      if (dismiss) dismiss.addEventListener('click', function () {
+        saved.durationWarning = '';
+        renderSaved();
+      });
+    }
+
+    function sessionTimerHeader(kind, draft) {
+      ensureSessionTimer(kind, draft);
+      const label = kind === 'cardio' ? 'Cardio session options' : 'Workout session options';
+      return '<header class="topbar workout-header"><div class="session-utility-bar">' +
+        '<button class="session-utility-button session-options-trigger" type="button" data-action="show-' + kind + '-options" aria-label="' + label + '"><span class="session-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span></button>' +
+        '<time id="session-timer" class="session-timer" aria-label="Session duration">' + sessionTimerText() + '</time>' +
+        '</div></header>';
+    }
+
     function setStatus(kind, message, code) {
       state.status = message ? { kind: kind || 'info', message: message, code: code || '' } : null;
     }
@@ -3645,7 +4091,6 @@ if (typeof module !== 'undefined' && module.exports) {
       if (state.checkpointBlocked) return 'Swap is paused because background saving is blocked. Use Complete to retry the safe save first, or continue in Today.';
       if (state.completing || state.saved) return 'Swap is unavailable because this workout is being completed or has already been saved.';
       if (state.sheetHandoff) return 'Swap is unavailable while the app is handing this workout over to Google Sheets.';
-      if (state.sessionSwitching) return 'Swap is unavailable while the workout session is changing.';
       if (state.draft && state.draft.pendingBatch) return 'Swap is unavailable in a pending batch so the original pending item remains linked.';
       return '';
     }
@@ -3656,7 +4101,6 @@ if (typeof module !== 'undefined' && module.exports) {
       if (state.checkpointBlocked) return name + ' is paused because background saving is blocked. Use Complete to retry the safe save first, or continue in Today.';
       if (state.completing || state.saved) return name + ' is unavailable because this workout is being completed or has already been saved.';
       if (state.sheetHandoff) return name + ' is unavailable while the app is handing this workout over to Google Sheets.';
-      if (state.sessionSwitching) return name + ' is unavailable while the workout session is changing.';
       return '';
     }
 
@@ -3667,6 +4111,201 @@ if (typeof module !== 'undefined' && module.exports) {
       if (!state.draft || !state.draft.exercises.length || !allSetCount()) return 'Skip workout needs a loaded workout plan.';
       if (state.draft.pendingBatch) return 'Skip workout is unavailable for a pending batch.';
       return '';
+    }
+
+    function clientPerformanceNow() {
+      return window.performance && typeof window.performance.now === 'function'
+        ? window.performance.now() : Date.now();
+    }
+
+    function clientPerformanceStart(endpoint) {
+      return {
+        schemaVersion: 1,
+        endpoint: endpoint,
+        actionStartedAt: clientPerformanceNow(),
+        rpcDispatchedAt: null,
+        rpcReturnedAt: null,
+        requestId: '',
+        responseBytes: null,
+        supportStatus: '',
+        finished: false
+      };
+    }
+
+    function clientPerformanceBytes(value) {
+      let json = '';
+      try { json = JSON.stringify(value); } catch (error) { return null; }
+      try {
+        if (window.TextEncoder) return new window.TextEncoder().encode(json).length;
+      } catch (error) {}
+      return json.length;
+    }
+
+    function clientPerformanceEvents() {
+      if (Array.isArray(window.__WORKOUT_PERFORMANCE_EVENTS)) {
+        return window.__WORKOUT_PERFORMANCE_EVENTS;
+      }
+      let events = [];
+      try {
+        const stored = window.sessionStorage
+          ? window.sessionStorage.getItem('workout-performance-v1') : '';
+        const parsed = stored ? JSON.parse(stored) : [];
+        if (Array.isArray(parsed)) events = parsed.slice(-200);
+      } catch (error) {}
+      window.__WORKOUT_PERFORMANCE_EVENTS = events;
+      return events;
+    }
+
+    function clientPerformancePersist(events) {
+      try {
+        if (window.sessionStorage) {
+          window.sessionStorage.setItem('workout-performance-v1', JSON.stringify(events));
+        }
+      } catch (error) {}
+      clientPerformanceExpose(events);
+    }
+
+    function clientPerformanceExpose(events) {
+      // Apps Script serves the UI in nested cross-origin frames. Expose only
+      // the already allowlisted aggregate summary and latest event on the page
+      // root so a private-sandbox browser check can read them without access to
+      // sessionStorage. This is hidden diagnostic metadata, not visible UI.
+      try {
+        if (!(document && document.documentElement)) return;
+        const safeEvents = Array.isArray(events) ? events : clientPerformanceEvents();
+        document.documentElement.setAttribute(
+          'data-workout-performance-summary',
+          JSON.stringify(clientPerformanceSummary())
+        );
+        document.documentElement.setAttribute(
+          'data-workout-performance-latest',
+          JSON.stringify(safeEvents.length ? safeEvents[safeEvents.length - 1] : null)
+        );
+      } catch (error) {}
+    }
+
+    function clientPerformancePercentile(values, percentile) {
+      if (!values.length) return null;
+      const sorted = values.slice().sort(function (a, b) { return a - b; });
+      const index = Math.max(0, Math.ceil(percentile * sorted.length) - 1);
+      return Math.round(sorted[index] * 10) / 10;
+    }
+
+    function clientPerformanceSummary() {
+      const events = clientPerformanceEvents();
+      const endpoints = {};
+      events.forEach(function (event) {
+        const endpoint = String(event && event.endpoint || 'Unknown');
+        if (!endpoints[endpoint]) endpoints[endpoint] = [];
+        endpoints[endpoint].push(event);
+      });
+      const summary = {};
+      Object.keys(endpoints).sort().forEach(function (endpoint) {
+        const endpointEvents = endpoints[endpoint];
+        const successful = endpointEvents.filter(function (event) { return event.success; });
+        const metric = function (name) {
+          const values = successful.map(function (event) { return Number(event[name]); })
+            .filter(function (value) { return Number.isFinite(value); });
+          return {
+            median: clientPerformancePercentile(values, 0.5),
+            p90: clientPerformancePercentile(values, 0.9)
+          };
+        };
+        summary[endpoint] = {
+          sampleCount: endpointEvents.length,
+          successCount: successful.length,
+          failureCount: endpointEvents.length - successful.length,
+          totalMs: metric('totalMs'),
+          rpcMs: metric('rpcMs'),
+          responseToUsableRenderMs: metric('responseToUsableRenderMs'),
+          responseBytes: metric('responseBytes')
+        };
+      });
+      return summary;
+    }
+
+    window.getWorkoutPerformanceSummary = clientPerformanceSummary;
+    window.clearWorkoutPerformanceEvents = function () {
+      window.__WORKOUT_PERFORMANCE_EVENTS = [];
+      clientPerformancePersist(window.__WORKOUT_PERFORMANCE_EVENTS);
+    };
+    clientPerformanceExpose(clientPerformanceEvents());
+
+    function measuredRpc(name, payload, timing) {
+      timing.rpcDispatchedAt = clientPerformanceNow();
+      return Promise.resolve(rpc(name, payload)).then(function (envelope) {
+        timing.rpcReturnedAt = clientPerformanceNow();
+        timing.requestId = envelope && envelope.requestId
+          || payload && payload.clientRequestId || '';
+        timing.responseBytes = clientPerformanceBytes(envelope);
+        return envelope;
+      }, function (error) {
+        timing.rpcReturnedAt = clientPerformanceNow();
+        timing.requestId = error && error.requestId
+          || payload && payload.clientRequestId || '';
+        throw error;
+      });
+    }
+
+    function consumeInitialBootstrap(timing) {
+      const envelope = window.WEB_APP_INITIAL_BOOTSTRAP || null;
+      window.WEB_APP_INITIAL_BOOTSTRAP = null;
+      if (!envelope) return null;
+      // performance.now() is relative to navigation start, so this event keeps
+      // measuring the complete initial visit even though bootstrap ran in doGet.
+      timing.actionStartedAt = 0;
+      timing.rpcDispatchedAt = 0;
+      timing.rpcReturnedAt = clientPerformanceNow();
+      timing.requestId = envelope.requestId || '';
+      timing.responseBytes = clientPerformanceBytes(envelope);
+      timing.supportStatus = 'embedded';
+      if (envelope.ok) return envelope;
+      const error = envelope.error || {
+        code: 'UNKNOWN_RESPONSE',
+        message: 'The tracker returned an unexpected response.',
+        retryable: true
+      };
+      error.requestId = envelope.requestId || '';
+      throw error;
+    }
+
+    function clientPerformanceFinish(timing, status, error) {
+      if (!timing || timing.finished) return;
+      timing.finished = true;
+      const finishedAt = clientPerformanceNow();
+      const dispatchedAt = timing.rpcDispatchedAt === null
+        ? finishedAt : timing.rpcDispatchedAt;
+      const returnedAt = timing.rpcReturnedAt === null
+        ? finishedAt : timing.rpcReturnedAt;
+      const event = {
+        schemaVersion: timing.schemaVersion,
+        endpoint: timing.endpoint,
+        requestId: timing.requestId,
+        success: status === 'success',
+        status: status || 'error',
+        supportStatus: timing.supportStatus || '',
+        errorCode: error && error.code ? String(error.code) : '',
+        actionToDispatchMs: Math.max(0, dispatchedAt - timing.actionStartedAt),
+        rpcMs: Math.max(0, returnedAt - dispatchedAt),
+        responseToUsableRenderMs: Math.max(0, finishedAt - returnedAt),
+        totalMs: Math.max(0, finishedAt - timing.actionStartedAt),
+        responseBytes: timing.responseBytes
+      };
+      // Private, bounded, session-scoped diagnostics. The allowlisted event
+      // contains no workout values, exercise names, notes, or other free text.
+      const events = clientPerformanceEvents();
+      events.push(event);
+      if (events.length > 200) {
+        events.splice(
+          0, events.length - 200
+        );
+      }
+      clientPerformancePersist(events);
+      try {
+        if (window.console && typeof window.console.info === 'function') {
+          window.console.info('workout client performance ' + JSON.stringify(event));
+        }
+      } catch (loggingError) {}
     }
 
     function rpc(name, payload) {
@@ -3741,6 +4380,54 @@ if (typeof module !== 'undefined' && module.exports) {
         return copy;
       }) : [];
       return next;
+    }
+
+    function draftCompositionFingerprint(draft) {
+      return JSON.stringify((draft && draft.exercises || []).map(function (exercise) {
+        return { id: String(exercise.id || ''), name: String(exercise.name || '') };
+      }));
+    }
+
+    function setBundledSwapSupport(support) {
+      const versions = support && support.sourceVersions;
+      const valid = support && support.schemaVersion === 1
+        && support.status === 'ready'
+        && typeof support.draftId === 'string' && support.draftId
+        && Number.isInteger(support.revisionAtGeneration) && support.revisionAtGeneration >= 0
+        && typeof support.compositionFingerprint === 'string'
+        && typeof support.generatedAt === 'string' && support.generatedAt
+        && versions && typeof versions === 'object'
+        && ['log', 'exercises', 'sessions', 'lookupPolicy'].every(function (key) {
+          return typeof versions[key] === 'string' && versions[key];
+        })
+        && support.optionsByPrimaryMuscle
+        && typeof support.optionsByPrimaryMuscle === 'object'
+        && !Array.isArray(support.optionsByPrimaryMuscle);
+      state.swapSupport = valid ? support : null;
+    }
+
+    function invalidateBundledSwapSupport() {
+      state.swapSupport = null;
+    }
+
+    function activeBundledSwapSupport() {
+      const support = state.swapSupport;
+      if (!support || !state.draft || support.draftId !== state.draft.draftId) return null;
+      if (support.compositionFingerprint !== draftCompositionFingerprint(state.draft)) return null;
+      return support;
+    }
+
+    function bundledExerciseOptions(support) {
+      const options = [];
+      const byMuscle = support && support.optionsByPrimaryMuscle || {};
+      Object.keys(byMuscle).sort().forEach(function (muscle) {
+        (Array.isArray(byMuscle[muscle]) ? byMuscle[muscle] : []).forEach(function (option) {
+          options.push(option);
+        });
+      });
+      return options.sort(function (a, b) {
+        return String(a && a.name || '').localeCompare(String(b && b.name || ''));
+      });
     }
 
     function newDraft(sessionType) {
@@ -4269,13 +4956,14 @@ if (typeof module !== 'undefined' && module.exports) {
 
     function renderDashboardCardio() {
       const summary = state.bootstrap && state.bootstrap.cardioSummary || {};
+      const active = !!state.cardioDraft;
       const count = Number(summary.sessions) || 0;
       const minutes = cardioNumber(summary.minutes);
       const distance = Number(summary.distanceKm) || 0;
       const total = count
         ? '<p class="dashboard-cardio-total">' + count + ' session' + (count === 1 ? '' : 's') + ' · ' + minutes + ' min' + (distance > 0 ? ' · ' + cardioNumber(distance) + ' km' : '') + '</p>'
         : '';
-      return '<section class="dashboard-cardio" aria-labelledby="dashboard-cardio-title"><button class="dashboard-cardio-row" type="button" data-action="start-cardio"' + (state.dashboardLoading ? ' disabled' : '') + ' aria-label="Add Cardio session"><span class="dashboard-cardio-status" aria-hidden="true">+</span><span class="dashboard-cardio-body"><span class="dashboard-cardio-heading"><h2 id="dashboard-cardio-title">Cardio</h2></span>' + total + '<span class="dashboard-cardio-split"><span><b>M</b> ' + (Number(summary.moderateSessions) || 0) + '</span><span><b>H</b> ' + (Number(summary.hiitSessions) || 0) + '</span></span></span></button></section>';
+      return '<section class="dashboard-cardio" aria-labelledby="dashboard-cardio-title"><button class="dashboard-cardio-row" type="button" data-action="start-cardio"' + (state.dashboardLoading ? ' disabled' : '') + ' aria-label="' + (active ? 'Resume' : 'Add') + ' Cardio session"><span class="dashboard-cardio-status" aria-hidden="true">' + (active ? 'Ⅱ' : '+') + '</span><span class="dashboard-cardio-body"><span class="dashboard-cardio-heading"><h2 id="dashboard-cardio-title">Cardio</h2></span>' + total + '<span class="dashboard-cardio-split"><span><b>M</b> ' + (Number(summary.moderateSessions) || 0) + '</span><span><b>H</b> ' + (Number(summary.hiitSessions) || 0) + '</span></span></span></button></section>';
     }
 
     function renderDashboard() {
@@ -4300,7 +4988,9 @@ if (typeof module !== 'undefined' && module.exports) {
         (dashboard.isDeload ? '<p class="dashboard-deload-copy">Reduced week: sets halved, load −10%, target 4 RIR.</p>' : '') +
         '<p class="dashboard-list-label">This week</p>' +
         (sessions.length ? '<div class="dashboard-session-list">' + sessions.map(function (session) {
-          const status = ['completed', 'in-progress', 'skipped'].indexOf(session.status) >= 0 ? session.status : 'not-started';
+          const status = state.draft && state.draft.sessionType === session.sessionType
+            ? 'in-progress'
+            : (['completed', 'in-progress', 'skipped'].indexOf(session.status) >= 0 ? session.status : 'not-started');
           return '<button data-tour="start-workout" data-tour-state="' + attr(status) + '" class="dashboard-session-row" type="button" data-action="load-dashboard-session" data-session-type="' + attr(session.sessionType) + '" aria-label="Open ' + attr(session.sessionType) + ', ' + attr(status.replace('-', ' ')) + '"' + (state.dashboardLoading ? ' disabled' : '') + '><span class="dashboard-status dashboard-status-' + status + '" aria-hidden="true">' + dashboardStatusIcon(status) + '</span><span><strong>' + text(session.sessionType) + '</strong><small>' + dashboardSessionCopy(session) + '</small></span></button>';
         }).join('') + '</div>' : '<section class="card setup-card"><h2>No programmed sessions</h2><p class="confirm-copy">Add sessions to Programs in Google Sheets, then reload this page.</p></section>') +
         dashboardAdvanceHtml(dashboard) +
@@ -4379,12 +5069,12 @@ if (typeof module !== 'undefined' && module.exports) {
     function renderCardio() {
       const draft = state.cardioDraft;
       const previous = draft.previous || cardioPreviousFor(draft.activity, draft.type);
-      APP.innerHTML = '<header class="topbar workout-header"><div class="topbar-row"><div class="workout-context"><button class="cardio-dashboard-link" type="button" data-action="show-cardio-dashboard"' + (state.dashboardLoading ? ' disabled' : '') + '>← Dashboard</button><div class="session-heading"><strong class="cardio-session-label">Cardio</strong></div><p class="meta-line">' + text(draft.date) + '</p></div><button class="button button-quiet button-sm header-action" type="button" data-action="edit-cardio-details">Edit details</button></div>' + (state.checkpointRunning ? '<div class="summary-strip"><span class="summary-chip">Saving draft…</span></div>' : '') + '</header>' +
+      APP.innerHTML = sessionTimerHeader('cardio', draft) +
         '<div class="content workout-content">' + renderStatus() +
         '<section class="exercise-intro"><p class="eyebrow">Activity</p><h1>' + text(draft.activity) + '</h1></section>' +
         '<nav class="exercise-rail-wrap cardio-rail-wrap" aria-label="Cardio activity"><div class="exercise-rail"><div class="exercise-tablist" role="tablist"><button class="exercise-tab cardio-active" type="button" role="tab" aria-selected="true" aria-controls="cardio-panel"><span class="avatar" aria-hidden="true">' + text(initials(draft.activity)) + '</span><span class="tab-name">' + text(draft.activity) + '</span></button></div><button class="exercise-add-card" type="button" data-action="show-cardio-activities" aria-label="Choose another Cardio activity" aria-haspopup="dialog"><span class="exercise-add-box" aria-hidden="true">+</span><span class="visually-hidden">Choose another Cardio activity</span></button></div></nav>' +
         '<section id="cardio-panel" class="card focus-card cardio-focus-card" aria-label="Cardio result"><div class="exercise-actions" aria-label="Cardio actions"><button class="action-chip" type="button" data-action="show-cardio-note" aria-haspopup="dialog">Note</button><button class="action-chip" type="button" data-action="show-cardio-activities" aria-haspopup="dialog">Swap</button></div><div class="compact-set-grid cardio-grid" role="table" aria-label="Cardio result for ' + attr(draft.activity) + '"><div class="compact-set-header" role="row"><span role="columnheader">Set</span><span role="columnheader">Previous</span><span role="columnheader">Time</span><span role="columnheader">km</span><span role="columnheader">RPE</span></div><div class="compact-set-body"><div class="compact-set-row cardio-row" role="row"><span class="set-type-cell" role="cell"><button class="set-type-circle standard" type="button" data-action="toggle-cardio-type" aria-label="Cardio type: ' + text(draft.type) + '">' + (draft.type === 'HIIT' ? 'H' : 'M') + '</button></span><span class="previous-performance" role="cell">' + cardioPreviousHtml(previous) + '</span><span class="compact-input-cell" role="cell"><input aria-label="Duration in minutes" data-cardio-field="durationMinutes" type="number" inputmode="decimal" min="0" step="1" value="' + attr(numericValue(draft.durationMinutes)) + '" placeholder="min"></span><span class="compact-input-cell" role="cell"><input aria-label="Distance in kilometres, optional" data-cardio-field="distanceKm" type="number" inputmode="decimal" min="0" step="0.01" value="' + attr(numericValue(draft.distanceKm)) + '" placeholder="—"></span><span class="compact-input-cell" role="cell"><input aria-label="Rate of perceived exertion from 0 to 10" data-cardio-field="rpe" type="number" inputmode="decimal" min="0" max="10" step="0.5" value="' + attr(numericValue(draft.rpe)) + '" placeholder="0–10"></span></div></div></div><div class="exercise-notes-stack"><button class="exercise-note-panel" type="button" data-action="show-cardio-note" aria-haspopup="dialog"><span class="exercise-note-heading"><strong>Activity note</strong><span aria-hidden="true">✎</span></span><span class="exercise-note-copy">' + (draft.notes ? text(draft.notes) : 'Add an optional note about this Cardio session.') + '</span></button></div></section></div>' +
-        '<footer class="sticky-actions"><div class="sticky-actions-inner"><button id="complete-cardio" class="button button-primary" type="button"' + (state.completing ? ' disabled' : '') + '>' + (state.completing ? 'Completing…' : 'Complete cardio') + '</button>' + cardioSheetFallbackButton() + '</div></footer>';
+        '<footer class="sticky-actions"><div class="sticky-actions-inner"><button id="complete-cardio" class="button button-primary" type="button"' + (state.completing ? ' disabled' : '') + '>' + (state.completing ? 'Completing…' : 'Complete cardio') + '</button></div></footer>';
     }
 
     function cardioSheetFallbackButton() {
@@ -4439,27 +5129,17 @@ if (typeof module !== 'undefined' && module.exports) {
 
     function renderWorkout() {
       const exercise = getFocusedExercise();
-      const sessions = (state.bootstrap && state.bootstrap.sessionTypes) || [];
       if (!exercise && state.draft.sessionType !== PENDING_SESSION_TYPE) { renderSetup(); return; }
       if (!exercise) { renderPendingWorkout(); return; }
       state.focusedId = exercise.id;
-      APP.innerHTML = '<header class="topbar workout-header">' +
-          '<div class="topbar-row"><div class="workout-context"><button class="cardio-dashboard-link" type="button" data-action="show-workout-dashboard"' + (state.dashboardLoading ? ' disabled' : '') + '>← Dashboard</button><div class="session-heading"><label class="visually-hidden" for="workout-session">Workout session</label><select id="workout-session" class="session-selector" aria-label="Workout session"' + (state.sessionSwitching || state.draft.pendingBatch ? ' disabled' : '') + '>' +
-            '<option value="' + PENDING_SESSION_TYPE + '"' + selected(state.draft.sessionType, PENDING_SESSION_TYPE) + '>Pending</option>' + sessions.map(function (session) { return '<option value="' + attr(session) + '"' + selected(state.draft.sessionType, session) + '>' + text(session) + '</option>'; }).join('') +
-          '</select></div><p class="meta-line">' + (state.draft.pendingBatch ? 'Pending from ' + text(state.draft.sessionType) + (state.draft.week != null ? ' · Week ' + text(state.draft.week) : '') + ' · ' : '') + text(state.draft.date) + (!state.draft.pendingBatch && state.draft.week != null ? ' · Week ' + text(state.draft.week) : '') + '</p></div>' +
-          '<button id="edit-workout" class="button button-quiet button-sm header-action" type="button">Edit details</button></div>' +
-          '<div class="summary-strip"><span class="summary-chip">' + completedSetCount() + ' / ' + allSetCount() + ' sets done</span>' +
-          (state.draft.meso ? '<span class="summary-chip">' + text(state.draft.meso) + '</span>' : '') +
-          (state.checkpointRunning ? '<span class="summary-chip">Saving draft…</span>' : '') + '</div>' +
-        '</header><div class="content workout-content">' + renderStatus() +
+      APP.innerHTML = sessionTimerHeader('workout', state.draft) + '<div class="content workout-content">' + renderStatus() +
           renderExerciseIntro(exercise) + renderRail() + renderFocus(exercise) +
         '</div>' + renderStickyActions();
       bindWorkoutEvents();
     }
 
     function renderPendingWorkout() {
-      const sessions = (state.bootstrap && state.bootstrap.sessionTypes) || [];
-      APP.innerHTML = '<header class="topbar workout-header"><div class="topbar-row"><div class="workout-context"><button class="cardio-dashboard-link" type="button" data-action="show-workout-dashboard"' + (state.dashboardLoading ? ' disabled' : '') + '>← Dashboard</button><div class="session-heading"><label class="visually-hidden" for="workout-session">Workout session</label><select id="workout-session" class="session-selector" aria-label="Workout session"><option value="' + PENDING_SESSION_TYPE + '" selected>Pending</option>' + sessions.map(function (session) { return '<option value="' + attr(session) + '">' + text(session) + '</option>'; }).join('') + '</select></div><p class="meta-line">' + text(state.draft.date) + '</p></div><button id="edit-workout" class="button button-quiet button-sm header-action" type="button">Edit details</button></div></header><div class="content workout-content">' + renderStatus() + '<section class="card setup-card"><p class="eyebrow">Standalone workout</p><h1>Choose pending exercises</h1><p class="confirm-copy">Your first choice sets this batch to the exercise’s original session and week. Completed work keeps that attribution and clears its matching pending item.</p><button class="button button-primary button-block" type="button" data-action="show-pending-exercises">Choose pending exercises</button></section></div>';
+      APP.innerHTML = sessionTimerHeader('workout', state.draft) + '<div class="content workout-content">' + renderStatus() + '<section class="card setup-card"><p class="eyebrow">Standalone workout</p><h1>Choose pending exercises</h1><p class="confirm-copy">Your first choice sets this batch to the exercise’s original session and week. Completed work keeps that attribution and clears its matching pending item.</p><button class="button button-primary button-block" type="button" data-action="show-pending-exercises">Choose pending exercises</button></section></div>';
       bindWorkoutEvents();
     }
 
@@ -4555,8 +5235,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
     function renderStickyActions() {
       const skipUnavailable = skipWorkoutUnavailableReason();
-      return '<footer class="sticky-actions"><div class="sticky-actions-inner"><button data-tour="complete-workout" id="complete-workout" class="button button-primary" type="button"' + (state.completing ? ' disabled' : '') + '>' + (state.completing ? 'Completing…' : 'Complete workout') + '</button>' +
-        sheetFallbackButton() + '</div><button id="skip-workout" class="button button-danger-soft button-block" style="margin-top:8px" type="button"' + (skipUnavailable ? ' disabled title="' + attr(skipUnavailable) + '"' : '') + '>Skip workout</button></footer>';
+      return '<footer class="sticky-actions"><div class="sticky-actions-inner"><button data-tour="complete-workout" id="complete-workout" class="button button-primary" type="button"' + (state.completing ? ' disabled' : '') + '>' + (state.completing ? 'Completing…' : 'Complete workout') + '</button></div><button id="skip-workout" class="button button-danger-soft button-block" style="margin-top:8px" type="button"' + (skipUnavailable ? ' disabled title="' + attr(skipUnavailable) + '"' : '') + '>Skip workout</button></footer>';
     }
 
     function sheetFallbackButton() {
@@ -4564,12 +5243,7 @@ if (typeof module !== 'undefined' && module.exports) {
       return url ? '<a class="button sheet-fallback" href="' + attr(url) + '" data-action="sheet-handoff" data-sheet-url="' + attr(url) + '" aria-label="Save this draft and continue in the Today sheet">Today ↗</a>' : '<button class="button sheet-fallback" type="button" disabled title="Google Sheets link is unavailable">Today</button>';
     }
 
-    function bindWorkoutEvents() {
-      document.getElementById('edit-workout').addEventListener('click', openWorkoutDetails);
-      document.getElementById('workout-session').addEventListener('change', function (event) {
-        requestSessionChange(event.target.value);
-      });
-    }
+    function bindWorkoutEvents() {}
 
     function openWorkoutDetails() {
       openModal('<section class="bottom-sheet details-modal" role="dialog" aria-modal="true" aria-labelledby="details-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Workout setup</p><h2 id="details-title">Workout details</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Close workout details">×</button></div>' + renderMetadataFields() + '<div class="confirm-actions"><button class="button button-primary" type="button" data-dismiss-modal>Done</button></div></section>');
@@ -4580,64 +5254,107 @@ if (typeof module !== 'undefined' && module.exports) {
       });
     }
 
-    function requestSessionChange(nextSession) {
-      if (!state.draft || state.sessionSwitching || !nextSession || nextSession === state.draft.sessionType) return;
-      const currentSession = state.draft.sessionType;
-      const selector = document.getElementById('workout-session');
-      if (selector) selector.value = currentSession;
-      if (state.exerciseCueSaving) {
-        setStatus('error', 'Session changes are paused while the exercise cue is being saved.');
-        renderStatusOnly();
-        return;
-      }
-      if (!state.workoutEdited) { switchWorkoutSession(nextSession); return; }
-      openModal('<section class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="switch-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Change session?</p><h2 id="switch-title">Switch from ' + text(currentSession) + ' to ' + text(nextSession) + '?</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Keep current session">×</button></div><p class="confirm-copy">This replaces the current workout plan in the app and in Today. If you want to keep these entries, continue in Today or complete this workout first.</p><div class="confirm-actions"><button class="button" type="button" data-dismiss-modal>Keep ' + text(currentSession) + '</button><button id="confirm-session-switch" class="button button-primary" type="button">Switch to ' + text(nextSession) + '</button></div></section>');
-      document.getElementById('confirm-session-switch').addEventListener('click', function () {
-        closeModal();
-        switchWorkoutSession(nextSession);
-      });
+    function openWorkoutOptions() {
+      openModal('<section class="bottom-sheet session-options-sheet" role="dialog" aria-modal="true" aria-labelledby="workout-options-title"><div class="sheet-handle"></div><div class="sheet-header"><h2 id="workout-options-title">Session options</h2><button class="button icon-button" type="button" data-dismiss-modal aria-label="Close session options">×</button></div><div class="session-options"><button id="open-workout-details" class="session-option" type="button"><span class="session-option-icon session-option-pencil" aria-hidden="true">✎</span><span><strong>Edit session details</strong><small>Date, week, gym, energy and session note</small></span><span class="session-option-arrow" aria-hidden="true">›</span></button><button id="open-workout-feedback" class="session-option" type="button"><span class="session-option-icon session-option-feedback" aria-hidden="true">…</span><span><strong>Send feedback</strong><small>Bug, general feedback or an idea</small></span><span class="session-option-arrow" aria-hidden="true">›</span></button><button id="return-workout-dashboard" class="session-option" type="button"><span class="session-option-icon" aria-hidden="true">←</span><span><strong>Return to dashboard</strong><small>Keep this workout open and come back later</small></span><span class="session-option-arrow" aria-hidden="true">›</span></button><button id="discard-workout-from-options" class="session-option session-option-danger" type="button"><span class="session-option-icon" aria-hidden="true">×</span><span><strong>Discard workout</strong><small>Delete this unfinished workout and return to the dashboard</small></span><span class="session-option-arrow" aria-hidden="true">›</span></button></div></section>', 'workout-options');
+      document.getElementById('open-workout-details').addEventListener('click', function () { closeModal(); openWorkoutDetails(); });
+      document.getElementById('open-workout-feedback').addEventListener('click', function () { closeModal(); openFeedback('workout'); });
+      document.getElementById('return-workout-dashboard').addEventListener('click', function () { returnToDashboard('workout'); });
+      document.getElementById('discard-workout-from-options').addEventListener('click', function () { closeModal(); requestDashboardDiscard('workout'); });
     }
 
-    async function switchWorkoutSession(nextSession) {
-      if (!state.draft || state.exerciseCueSaving || state.sessionSwitching || !nextSession || nextSession === state.draft.sessionType) return;
-      invalidateSwapRequest();
-      invalidateAddExerciseRequest();
-      state.sessionSwitching = true;
-      const selector = document.getElementById('workout-session');
-      if (selector) selector.disabled = true;
-      setStatus('info', 'Switching to ' + nextSession + '…');
-      renderStatusOnly();
+    function openCardioOptions() {
+      openModal('<section class="bottom-sheet session-options-sheet" role="dialog" aria-modal="true" aria-labelledby="cardio-options-title"><div class="sheet-handle"></div><div class="sheet-header"><h2 id="cardio-options-title">Session options</h2><button class="button icon-button" type="button" data-dismiss-modal aria-label="Close session options">×</button></div><div class="session-options"><button id="open-cardio-details" class="session-option" type="button"><span class="session-option-icon session-option-pencil" aria-hidden="true">✎</span><span><strong>Edit session details</strong><small>Date for this Cardio session</small></span><span class="session-option-arrow" aria-hidden="true">›</span></button><button id="open-cardio-feedback" class="session-option" type="button"><span class="session-option-icon session-option-feedback" aria-hidden="true">…</span><span><strong>Send feedback</strong><small>Bug, general feedback or an idea</small></span><span class="session-option-arrow" aria-hidden="true">›</span></button><button id="return-cardio-dashboard" class="session-option" type="button"><span class="session-option-icon" aria-hidden="true">←</span><span><strong>Return to dashboard</strong><small>Keep this Cardio session open and come back later</small></span><span class="session-option-arrow" aria-hidden="true">›</span></button><button id="discard-cardio-from-options" class="session-option session-option-danger" type="button"><span class="session-option-icon" aria-hidden="true">×</span><span><strong>Discard Cardio</strong><small>Delete this unfinished session and return to the dashboard</small></span><span class="session-option-arrow" aria-hidden="true">›</span></button></div></section>', 'cardio-options');
+      document.getElementById('open-cardio-details').addEventListener('click', function () { closeModal(); showCardioDetails(); });
+      document.getElementById('open-cardio-feedback').addEventListener('click', function () { closeModal(); openFeedback('cardio'); });
+      document.getElementById('return-cardio-dashboard').addEventListener('click', function () { returnToDashboard('cardio'); });
+      document.getElementById('discard-cardio-from-options').addEventListener('click', function () { closeModal(); requestDashboardDiscard('cardio'); });
+    }
+
+    function feedbackContext(kind) {
+      if (kind === 'cardio' && state.cardioDraft) {
+        return {
+          screen: 'cardio',
+          activity: state.cardioDraft.activity || '',
+          cardioType: state.cardioDraft.type || ''
+        };
+      }
+      if (state.draft) {
+        return {
+          screen: 'workout',
+          sessionType: state.draft.sessionType || '',
+          week: state.draft.week == null ? null : state.draft.week
+        };
+      }
+      return { screen: kind === 'cardio' ? 'cardio' : 'workout' };
+    }
+
+    function feedbackModalHtml() {
+      const feedback = state.feedback || {};
+      const type = feedback.type || 'feedback';
+      const error = feedback.error ? '<p class="feedback-error" role="alert">' + text(feedback.error) + '</p>' : '';
+      return '<section class="bottom-sheet feedback-sheet" role="dialog" aria-modal="true" aria-labelledby="feedback-title"><div class="sheet-handle"></div><div class="sheet-header"><h2 id="feedback-title">Send feedback</h2><button class="button icon-button" type="button" data-dismiss-modal' + (feedback.submitting ? ' disabled' : '') + ' aria-label="Close feedback">×</button></div><div class="feedback-type-picker" role="group" aria-label="Feedback type"><button class="feedback-type' + (type === 'bug' ? ' is-selected' : '') + '" type="button" data-feedback-type="bug"' + (feedback.submitting ? ' disabled' : '') + '>Bug</button><button class="feedback-type' + (type === 'feedback' ? ' is-selected' : '') + '" type="button" data-feedback-type="feedback"' + (feedback.submitting ? ' disabled' : '') + '>General</button><button class="feedback-type' + (type === 'idea' ? ' is-selected' : '') + '" type="button" data-feedback-type="idea"' + (feedback.submitting ? ' disabled' : '') + '>Idea</button></div><div class="field feedback-note-field"><label for="feedback-note">Note</label><textarea id="feedback-note" maxlength="1600" placeholder="What happened, or what would you change?"' + (feedback.submitting ? ' disabled' : '') + '>' + text(feedback.note || '') + '</textarea></div>' + error + '<div class="confirm-actions"><button class="button" type="button" data-dismiss-modal' + (feedback.submitting ? ' disabled' : '') + '>Cancel</button><button id="submit-feedback" class="button button-primary" type="button"' + (feedback.submitting ? ' disabled' : '') + '>' + (feedback.submitting ? 'Sending…' : 'Send feedback') + '</button></div></section>';
+    }
+
+    function bindFeedbackModal() {
+      const backdrop = document.getElementById('modal-backdrop');
+      if (!backdrop || !state.feedback) return;
+      backdrop.querySelectorAll('[data-feedback-type]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          if (state.feedback.submitting) return;
+          const note = document.getElementById('feedback-note');
+          state.feedback.note = note ? note.value : state.feedback.note;
+          state.feedback.type = button.dataset.feedbackType;
+          updateModal(feedbackModalHtml());
+          bindFeedbackModal();
+        });
+      });
+      const note = document.getElementById('feedback-note');
+      if (note) note.addEventListener('input', function () { state.feedback.note = note.value; });
+      const submit = document.getElementById('submit-feedback');
+      if (submit) submit.addEventListener('click', submitFeedback);
+    }
+
+    function openFeedback(kind) {
+      state.feedback = {
+        type: 'feedback', note: '', error: '', submitting: false,
+        context: feedbackContext(kind)
+      };
+      openModal(feedbackModalHtml(), 'feedback');
+      bindFeedbackModal();
+    }
+
+    async function submitFeedback() {
+      const feedback = state.feedback;
+      if (!feedback || feedback.submitting) return;
+      const note = String(feedback.note || '').trim();
+      if (!note) {
+        feedback.error = 'Add a note before sending feedback.';
+        updateModal(feedbackModalHtml());
+        bindFeedbackModal();
+        return;
+      }
+      feedback.note = note;
+      feedback.error = '';
+      feedback.submitting = true;
+      updateModal(feedbackModalHtml());
       try {
-        await flushCheckpoint();
-        const response = await rpc('webLoadSession', { clientRequestId: clientRequestId('switch'), sessionType: nextSession, date: state.draft.date || todayIso() });
-        invalidateSwapRequest();
-        invalidateAddExerciseRequest();
-        state.draft = normaliseDraft(response.data && response.data.draft);
-        state.deload = (response.data && response.data.deload) || null;
-        state.completionContext = (response.data && response.data.completionContext) || null;
-        state.completionView = 'session';
-        state.draft.sessionType = state.draft.sessionType || nextSession;
-        captureLoadedExerciseState(state.draft, true);
-        state.focusedId = state.draft.focusedExerciseId || (state.draft.exercises[0] && state.draft.exercises[0].id) || null;
-        state.draft.focusedExerciseId = state.focusedId;
-        state.workoutEdited = false;
-        state.history = null;
-        state.submissionId = null;
-        state.checkpointBlocked = false;
-        if (!state.draft.exercises.length) {
-          setStatus('warning', 'This session has no programmed exercises yet. Check Programs in Google Sheets, then try again.');
-        } else {
-          state.dirty = true;
-          state.editEpoch += 1;
-          setStatus(null);
-          queueCheckpoint();
-        }
+        await rpc('webSubmitFeedback', {
+          clientRequestId: clientRequestId('feedback'),
+          type: feedback.type,
+          note: note,
+          context: feedback.context
+        });
+        state.feedback = null;
+        closeModal();
+        setStatus('success', 'Feedback sent. Thanks for capturing it.');
+        renderStatusOnly();
       } catch (error) {
-        setStatus('error', asErrorMessage(error, 'switch the session'), error.code);
-      } finally {
-        state.sessionSwitching = false;
-        render();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (state.feedback !== feedback) return;
+        feedback.submitting = false;
+        feedback.error = error && error.message
+          ? error.message : 'Could not send feedback. Your note is still here.';
+        updateModal(feedbackModalHtml());
+        bindFeedbackModal();
       }
     }
 
@@ -4690,16 +5407,14 @@ if (typeof module !== 'undefined' && module.exports) {
         render();
       } else if (action === 'start-cardio') {
         startCardio();
-      } else if (action === 'show-cardio-dashboard') {
-        showCardioDashboard();
-      } else if (action === 'show-workout-dashboard') {
-        showWorkoutDashboard();
+      } else if (action === 'show-workout-options') {
+        openWorkoutOptions();
+      } else if (action === 'show-cardio-options') {
+        openCardioOptions();
       } else if (action === 'show-cardio-activities') {
         showCardioActivities();
       } else if (action === 'toggle-cardio-type') {
         changeCardioDraft(function (draft) { draft.type = draft.type === 'HIIT' ? 'MISS' : 'HIIT'; }, true);
-      } else if (action === 'edit-cardio-details') {
-        showCardioDetails();
       } else if (action === 'show-cardio-note') {
         showCardioNote();
       }
@@ -5111,18 +5826,21 @@ if (typeof module !== 'undefined' && module.exports) {
       const date = document.getElementById('setup-date').value || todayIso();
       const weekValue = document.getElementById('setup-week').value;
       if (!session) { setStatus('error', 'Choose a session before loading your workout.'); renderStatusOnly(); return; }
+      const performance = clientPerformanceStart('Session Load');
       const button = document.getElementById('load-session');
       button.disabled = true; button.textContent = 'Loading…'; setStatus(null); renderStatusOnly();
       try {
-        const response = await rpc('webLoadSession', {
+        const response = await measuredRpc('webLoadSession', {
           clientRequestId: clientRequestId('load'),
           sessionType: session,
           date: date,
           week: state.setupWeekTouched && weekValue !== '' ? Number(weekValue) : null
-        });
+        }, performance);
+        invalidateHistoryRequest();
         invalidateSwapRequest();
         invalidateAddExerciseRequest();
         state.draft = normaliseDraft(response.data && response.data.draft);
+        setBundledSwapSupport(response.data && response.data.swapSupport);
         state.deload = (response.data && response.data.deload) || null;
         state.completionContext = (response.data && response.data.completionContext) || null;
         state.completionView = 'session';
@@ -5144,9 +5862,11 @@ if (typeof module !== 'undefined' && module.exports) {
           queueCheckpoint();
         }
         render();
+        clientPerformanceFinish(performance, 'success');
       } catch (error) {
         setStatus('error', asErrorMessage(error, 'load the session'), error.code);
         button.disabled = false; button.textContent = 'Load workout'; renderStatusOnly();
+        clientPerformanceFinish(performance, 'error', error);
       }
     }
 
@@ -5207,23 +5927,39 @@ if (typeof module !== 'undefined' && module.exports) {
 
     async function loadDashboardSession(session) {
       if (!session || state.dashboardLoading || state.exerciseCueSaving) return;
+      if (state.draft) {
+        if (state.draft.sessionType === session) {
+          state.dashboardVisible = false;
+          setStatus(null);
+          render();
+        } else {
+          setStatus('warning', state.draft.sessionType + ' is still open. Resume or discard it before opening another workout.');
+          renderStatusOnly();
+        }
+        return;
+      }
       if (state.cardioDraft) {
         setStatus('warning', 'A Cardio draft is still open. Resume and complete it before opening a resistance session.');
         renderStatusOnly();
         return;
       }
+      const performance = clientPerformanceStart('Session Load');
+      let performanceStatus = 'error';
+      let performanceError = null;
       state.dashboardLoading = true;
       setStatus('info', 'Opening ' + session + '…');
       render();
       try {
-        const response = await rpc('webLoadSession', {
+        const response = await measuredRpc('webLoadSession', {
           clientRequestId: clientRequestId('dashboard-load'),
           sessionType: session,
           date: state.bootstrap && state.bootstrap.defaultDate || todayIso()
-        });
+        }, performance);
+        invalidateHistoryRequest();
         invalidateSwapRequest();
         invalidateAddExerciseRequest();
         state.draft = normaliseDraft(response.data && response.data.draft);
+        setBundledSwapSupport(response.data && response.data.swapSupport);
         state.deload = (response.data && response.data.deload) || null;
         state.completionContext = (response.data && response.data.completionContext) || null;
         state.completionView = 'session';
@@ -5243,11 +5979,14 @@ if (typeof module !== 'undefined' && module.exports) {
           setStatus(null);
           queueCheckpoint();
         }
+        performanceStatus = 'success';
       } catch (error) {
+        performanceError = error;
         setStatus('error', asErrorMessage(error, 'open the session'), error.code);
       } finally {
         state.dashboardLoading = false;
         render();
+        clientPerformanceFinish(performance, performanceStatus, performanceError);
       }
     }
 
@@ -5281,14 +6020,13 @@ if (typeof module !== 'undefined' && module.exports) {
       }
     }
 
-    function showCardioDashboard() {
-      if (!state.cardioDraft || state.dashboardLoading || state.completing) return;
-      requestDashboardDiscard('cardio');
-    }
-
-    function showWorkoutDashboard() {
-      if (!state.draft || state.dashboardLoading || state.completing || state.sheetHandoff) return;
-      requestDashboardDiscard('workout');
+    function returnToDashboard(kind) {
+      const draft = kind === 'cardio' ? state.cardioDraft : state.draft;
+      if (!draft || state.dashboardLoading || state.completing || state.sheetHandoff) return;
+      closeModal();
+      state.dashboardVisible = true;
+      setStatus(null);
+      render();
     }
 
     function requestDashboardDiscard(kind) {
@@ -5327,6 +6065,7 @@ if (typeof module !== 'undefined' && module.exports) {
           expectedRevision: current.revision
         });
         const result = response.data || {};
+        clearSessionTimer(kind, current);
         state.dirty = false;
         state.checkpointBlocked = false;
         state.checkpointRetryCount = 0;
@@ -5355,15 +6094,49 @@ if (typeof module !== 'undefined' && module.exports) {
     async function showHistory() {
       const exercise = getFocusedExercise();
       if (!exercise || state.historyLoading) return;
+      const performance = clientPerformanceStart('History');
+      openModal('<section class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="history-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Previous performance</p><h2 id="history-title">' + text(exercise.name) + '</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Close history">×</button></div><div class="app-loading" style="min-height:180px"><span class="spinner"></span><p>Loading history…</p></div></section>', 'history');
+      const requestId = state.historyRequestId + 1;
+      state.historyRequestId = requestId;
       state.historyLoading = true;
-      openModal('<section class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="history-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Previous performance</p><h2 id="history-title">' + text(exercise.name) + '</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Close history">×</button></div><div class="app-loading" style="min-height:180px"><span class="spinner"></span><p>Loading history…</p></div></section>');
+      const requestContext = {
+        requestId: requestId,
+        draftId: state.draft.draftId,
+        sessionType: state.draft.sessionType,
+        date: state.draft.date,
+        exerciseId: exercise.id,
+        exerciseName: exercise.name
+      };
       try {
-        const response = await rpc('webGetExerciseHistory', { clientRequestId: clientRequestId('history'), sessionType: state.draft.sessionType, exercise: exercise.name, date: state.draft.date });
+        const response = await measuredRpc('webGetExerciseHistory', { clientRequestId: clientRequestId('history'), sessionType: requestContext.sessionType, exercise: requestContext.exerciseName, date: requestContext.date }, performance);
+        if (!historyRequestIsCurrent(requestContext)) {
+          clientPerformanceFinish(performance, 'discarded');
+          return;
+        }
         state.history = response.data || { exercise: exercise.name, items: [] };
         renderHistoryModal();
+        clientPerformanceFinish(performance, 'success');
       } catch (error) {
-        renderHistoryError(asErrorMessage(error, 'load history'));
-      } finally { state.historyLoading = false; }
+        if (historyRequestIsCurrent(requestContext)) {
+          renderHistoryError(asErrorMessage(error, 'load history'));
+          clientPerformanceFinish(performance, 'error', error);
+        } else {
+          clientPerformanceFinish(performance, 'discarded');
+        }
+      } finally {
+        if (state.historyRequestId === requestId) state.historyLoading = false;
+      }
+    }
+
+    function historyRequestIsCurrent(context) {
+      const backdrop = document.getElementById('modal-backdrop');
+      if (!context || !state.draft || state.historyRequestId !== context.requestId) return false;
+      if (!backdrop || backdrop.dataset.modalOwner !== 'history') return false;
+      if (state.draft.draftId !== context.draftId
+          || state.draft.sessionType !== context.sessionType
+          || state.draft.date !== context.date) return false;
+      const focused = getFocusedExercise();
+      return !!focused && focused.id === context.exerciseId && focused.name === context.exerciseName;
     }
 
     function historySetText(set) {
@@ -5394,6 +6167,7 @@ if (typeof module !== 'undefined' && module.exports) {
         renderStatusOnly();
         return;
       }
+      const performance = clientPerformanceStart('Swap');
       openModal('<section class="bottom-sheet swap-sheet" role="dialog" aria-modal="true" aria-labelledby="swap-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Swap exercise</p><h2 id="swap-title">Replace ' + text(exercise.name) + '</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Close swap">×</button></div><div class="app-loading swap-loading"><span class="spinner"></span><p>Finding ' + text(exercise.primaryMuscle || 'matching') + ' alternatives…</p></div></section>', 'swap');
       const requestId = state.swapRequestId + 1;
       state.swapRequestId = requestId;
@@ -5407,17 +6181,33 @@ if (typeof module !== 'undefined' && module.exports) {
         exerciseName: exercise.name
       };
       try {
-        const response = await rpc('webGetSwapOptions', {
-          clientRequestId: clientRequestId('swap-options'),
-          sessionType: requestContext.sessionType,
-          exercise: exercise.name
-        });
+        const support = activeBundledSwapSupport();
+        let data;
+        if (support) {
+          performance.supportStatus = 'bundled-hit';
+          performance.rpcDispatchedAt = performance.actionStartedAt;
+          performance.rpcReturnedAt = performance.actionStartedAt;
+          const muscle = exercise.primaryMuscle || '';
+          data = {
+            primaryMuscle: muscle,
+            options: Array.isArray(support.optionsByPrimaryMuscle[muscle])
+              ? support.optionsByPrimaryMuscle[muscle] : []
+          };
+          performance.responseBytes = clientPerformanceBytes(data);
+        } else {
+          performance.supportStatus = 'fallback-rpc';
+          const response = await measuredRpc('webGetSwapOptions', {
+            clientRequestId: clientRequestId('swap-options'),
+            sessionType: requestContext.sessionType,
+            exercise: exercise.name
+          }, performance);
+          data = response.data || {};
+        }
         if (!swapRequestIsCurrent(requestContext)) return;
         const usedNames = {};
         state.draft.exercises.forEach(function (item) {
           if (item.id !== exercise.id) usedNames[item.name] = true;
         });
-        const data = response.data || {};
         state.swap = {
           exerciseId: exercise.id,
           exerciseName: exercise.name,
@@ -5426,16 +6216,19 @@ if (typeof module !== 'undefined' && module.exports) {
           sessionType: requestContext.sessionType,
           primaryMuscle: data.primaryMuscle || exercise.primaryMuscle || '',
           options: (Array.isArray(data.options) ? data.options : []).filter(function (option) {
-            return option && option.name && !usedNames[option.name];
+            return option && option.name && option.name !== exercise.name && !usedNames[option.name];
           })
         };
         renderSwapModal();
+        clientPerformanceFinish(performance, 'success');
       } catch (error) {
         if (swapRequestIsCurrent(requestContext)) {
           updateModal('<section class="bottom-sheet swap-sheet" role="dialog" aria-modal="true" aria-labelledby="swap-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Swap exercise</p><h2 id="swap-title">Alternatives unavailable</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Close swap">×</button></div><div class="status-banner error">' + text(asErrorMessage(error, 'load swap options')) + '</div></section>');
         }
+        clientPerformanceFinish(performance, 'error', error);
       } finally {
         if (state.swapRequestId === requestId) state.swapLoading = false;
+        clientPerformanceFinish(performance, 'discarded');
       }
     }
 
@@ -5564,6 +6357,7 @@ if (typeof module !== 'undefined' && module.exports) {
         });
         state.exerciseCueBaselines[exercise.id] = String(option.cue || '').trim();
       }, false);
+      invalidateBundledSwapSupport();
       state.history = null;
       state.swap = null;
       setStatus('success', oldName + ' was swapped for ' + option.name + '. The draft is being saved to Today.');
@@ -5598,6 +6392,7 @@ if (typeof module !== 'undefined' && module.exports) {
         renderStatusOnly();
         return;
       }
+      const performance = clientPerformanceStart('Add Exercise');
       openModal('<section class="bottom-sheet swap-sheet" role="dialog" aria-modal="true" aria-labelledby="add-exercise-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Add exercise</p><h2 id="add-exercise-title">Choose from your library</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Close exercise picker">×</button></div><div class="app-loading swap-loading"><span class="spinner"></span><p>Loading exercises…</p></div></section>', 'add-exercise');
       const requestId = state.addExerciseRequestId + 1;
       state.addExerciseRequestId = requestId;
@@ -5609,14 +6404,25 @@ if (typeof module !== 'undefined' && module.exports) {
         sessionType: state.draft.sessionType
       };
       try {
-        const response = await rpc('webGetAddExerciseOptions', {
-          clientRequestId: clientRequestId('add-exercise-options'),
-          sessionType: requestContext.sessionType
-        });
+        const support = activeBundledSwapSupport();
+        let data;
+        if (support) {
+          performance.supportStatus = 'bundled-hit';
+          performance.rpcDispatchedAt = performance.actionStartedAt;
+          performance.rpcReturnedAt = performance.actionStartedAt;
+          data = { options: bundledExerciseOptions(support) };
+          performance.responseBytes = clientPerformanceBytes(data);
+        } else {
+          performance.supportStatus = 'fallback-rpc';
+          const response = await measuredRpc('webGetAddExerciseOptions', {
+            clientRequestId: clientRequestId('add-exercise-options'),
+            sessionType: requestContext.sessionType
+          }, performance);
+          data = response.data || {};
+        }
         if (!addExerciseRequestIsCurrent(requestContext)) return;
         const usedNames = {};
         state.draft.exercises.forEach(function (exercise) { usedNames[exercise.name] = true; });
-        const data = response.data || {};
         state.addExercise = {
           requestId: requestId,
           draftId: requestContext.draftId,
@@ -5630,12 +6436,15 @@ if (typeof module !== 'undefined' && module.exports) {
           })
         };
         renderAddExerciseModal();
+        clientPerformanceFinish(performance, 'success');
       } catch (error) {
         if (addExerciseRequestIsCurrent(requestContext)) {
           updateModal('<section class="bottom-sheet swap-sheet" role="dialog" aria-modal="true" aria-labelledby="add-exercise-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Add exercise</p><h2 id="add-exercise-title">Exercise library unavailable</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Close exercise picker">×</button></div><div class="status-banner error">' + text(asErrorMessage(error, 'load exercises')) + '</div></section>');
         }
+        clientPerformanceFinish(performance, 'error', error);
       } finally {
         if (state.addExerciseRequestId === requestId) state.addExerciseLoading = false;
+        clientPerformanceFinish(performance, 'discarded');
       }
     }
 
@@ -5643,6 +6452,7 @@ if (typeof module !== 'undefined' && module.exports) {
       if (!state.draft || state.addExerciseLoading) return;
       const unavailable = draftMutationUnavailableReason('Adding a pending exercise');
       if (unavailable) { setStatus('error', unavailable); renderStatusOnly(); return; }
+      const performance = clientPerformanceStart('Pending Exercise');
       openModal('<section class="bottom-sheet swap-sheet" role="dialog" aria-modal="true" aria-labelledby="add-exercise-title"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Pending exercises</p><h2 id="add-exercise-title">Loading pending exercises…</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Close pending exercises">×</button></div><div class="app-loading swap-loading"><span class="spinner"></span><p>Loading pending exercises…</p></div></section>', 'add-exercise');
       const requestId = state.addExerciseRequestId + 1;
       state.addExerciseRequestId = requestId;
@@ -5650,7 +6460,7 @@ if (typeof module !== 'undefined' && module.exports) {
       state.addExercise = null;
       const requestContext = { requestId: requestId, draftId: state.draft.draftId, sessionType: state.draft.sessionType };
       try {
-        const response = await rpc('webGetPendingExerciseOptions', { clientRequestId: clientRequestId('pending-exercise-options') });
+        const response = await measuredRpc('webGetPendingExerciseOptions', { clientRequestId: clientRequestId('pending-exercise-options') }, performance);
         if (!addExerciseRequestIsCurrent(requestContext)) return;
         const usedNames = {};
         state.draft.exercises.forEach(function (exercise) { usedNames[exercise.name] = true; });
@@ -5666,12 +6476,15 @@ if (typeof module !== 'undefined' && module.exports) {
           options: eligibleOptions.filter(function (option) { return !usedNames[option.name]; })
         };
         renderAddExerciseModal();
+        clientPerformanceFinish(performance, 'success');
       } catch (error) {
         if (addExerciseRequestIsCurrent(requestContext)) {
           updateModal('<section class="bottom-sheet swap-sheet" role="dialog" aria-modal="true"><div class="sheet-handle"></div><div class="sheet-header"><div><p class="eyebrow">Pending exercises</p><h2>Pending exercises unavailable</h2></div><button class="button icon-button" type="button" data-dismiss-modal aria-label="Close pending exercises">×</button></div><div class="status-banner error">' + text(asErrorMessage(error, 'load pending exercises')) + '</div></section>');
         }
+        clientPerformanceFinish(performance, 'error', error);
       } finally {
         if (state.addExerciseRequestId === requestId) state.addExerciseLoading = false;
+        clientPerformanceFinish(performance, 'discarded');
       }
     }
 
@@ -5798,6 +6611,7 @@ if (typeof module !== 'undefined' && module.exports) {
         render();
         return;
       }
+      invalidateBundledSwapSupport();
       state.history = null;
       setStatus('success', added.name + ' was added to ' + (state.draft.pendingBatch ? 'Pending from ' + state.draft.sessionType + ' · Week ' + state.draft.week : 'this workout') + '. Programs was not changed.');
       render();
@@ -5807,6 +6621,11 @@ if (typeof module !== 'undefined' && module.exports) {
       state.swapRequestId += 1;
       state.swapLoading = false;
       state.swap = null;
+    }
+
+    function invalidateHistoryRequest() {
+      state.historyRequestId += 1;
+      state.historyLoading = false;
     }
 
     function invalidateAddExerciseRequest() {
@@ -5833,6 +6652,7 @@ if (typeof module !== 'undefined' && module.exports) {
     function updateModal(html) { const backdrop = document.getElementById('modal-backdrop'); if (backdrop) backdrop.innerHTML = html; }
     function closeModal() {
       const backdrop = document.getElementById('modal-backdrop');
+      if (backdrop && backdrop.dataset.modalOwner === 'history') invalidateHistoryRequest();
       if (backdrop && backdrop.dataset.modalOwner === 'swap') invalidateSwapRequest();
       if (backdrop && backdrop.dataset.modalOwner === 'add-exercise') invalidateAddExerciseRequest();
       if (backdrop && backdrop.dataset.modalOwner === 'exercise-cue') invalidateExerciseCueSave();
@@ -5857,6 +6677,8 @@ if (typeof module !== 'undefined' && module.exports) {
 
     async function completeCardio() {
       if (!state.cardioDraft || state.completing || state.saved) return;
+      const timerDraft = state.cardioDraft;
+      pauseSessionTimer('cardio', timerDraft);
       closeModal();
       state.completing = true;
       setStatus('info', 'Saving your Cardio session…');
@@ -5871,13 +6693,16 @@ if (typeof module !== 'undefined' && module.exports) {
           expectedRevision: draft.revision,
           submissionId: state.submissionId
         });
-        state.saved = response.data || {};
+        const completed = response.data || {};
+        state.saved = completed;
         state.cardioDraft = null;
         state.dirty = false;
         state.completing = false;
         setStatus(null);
         render();
+        finishDurationRecording('cardio', timerDraft, completed);
       } catch (error) {
+        resumeSessionTimer('cardio', timerDraft);
         state.completing = false;
         setStatus('error', asErrorMessage(error, 'complete Cardio'), error.code);
         render();
@@ -5948,6 +6773,8 @@ if (typeof module !== 'undefined' && module.exports) {
           return;
         }
       }
+      const timerDraft = state.draft;
+      pauseSessionTimer('workout', timerDraft);
       closeModal();
       invalidateSwapRequest();
       invalidateAddExerciseRequest();
@@ -5969,13 +6796,21 @@ if (typeof module !== 'undefined' && module.exports) {
           submissionId: state.submissionId,
           completionSummary: completionSummary
         });
-        state.saved = Object.assign({}, response.data || {});
+        const completed = Object.assign({}, response.data || {});
+        if (completed.intentionallySkipped) {
+          clearSessionTimer('workout', timerDraft);
+        }
+        state.saved = completed;
         if (!state.saved.completionSummary) state.saved.completionSummary = completionSummary;
         state.dirty = false;
         state.completing = false;
         setStatus(null);
         render();
+        if (!completed.intentionallySkipped) {
+          finishDurationRecording('workout', timerDraft, completed);
+        }
       } catch (error) {
+        resumeSessionTimer('workout', timerDraft);
         state.completing = false;
         setStatus('error', asErrorMessage(error, 'complete the workout'), error.code);
         render();
@@ -6106,16 +6941,18 @@ if (typeof module !== 'undefined' && module.exports) {
       if (weekTab) weekTab.addEventListener('click', function () {
         if (state.completionView !== 'week') { state.completionView = 'week'; renderSaved(); }
       });
+      bindDurationWarning(state.saved || {});
     }
 
     function renderSaved() {
       const saved = state.saved || {};
       if (saved.kind === 'cardio') {
-        APP.innerHTML = '<header class="topbar"><p class="eyebrow">Workout Tracker</p><h1>Cardio saved</h1><p class="meta-line">' + text(saved.activity || 'Cardio') + (saved.date ? ' · ' + text(saved.date) : '') + '</p></header><div class="content"><section class="card status-card" style="min-height:unset"><div class="avatar" style="width:56px;height:56px;font-size:26px">✓</div>' + (window.DEMO_BACKEND ? '' : '<h2>Saved confidently</h2>') + '<p class="meta-line">' + text(saved.durationMinutes) + ' min ' + (saved.type === 'HIIT' ? 'H / HIIT' : 'M / MISS') + (window.DEMO_BACKEND ? '.</p>' : ' saved to LogCardio.</p><p class="small">Session: ' + text(saved.sessionId || '') + '</p>') + '<button id="start-another" class="button button-primary button-block" type="button">Back to dashboard</button>' + (window.DEMO_BACKEND ? '' : '<div style="margin-top:12px"><a class="sheet-link" href="' + attr(trackerSheetUrl('cardioLog')) + '">Inspect LogCardio ↗</a></div>') + '</section></div>';
+        APP.innerHTML = '<header class="topbar"><p class="eyebrow">Workout Tracker</p><h1>Cardio saved</h1><p class="meta-line">' + text(saved.activity || 'Cardio') + (saved.date ? ' · ' + text(saved.date) : '') + '</p></header><div class="content">' + durationWarningHtml(saved) + '<section class="card status-card" style="min-height:unset"><div class="avatar" style="width:56px;height:56px;font-size:26px">✓</div>' + (window.DEMO_BACKEND ? '' : '<h2>Saved confidently</h2>') + '<p class="meta-line">' + text(saved.durationMinutes) + ' min ' + (saved.type === 'HIIT' ? 'H / HIIT' : 'M / MISS') + (window.DEMO_BACKEND ? '.</p>' : ' saved to LogCardio.</p><p class="small">Session: ' + text(saved.sessionId || '') + '</p>') + '<button id="start-another" class="button button-primary button-block" type="button">Back to dashboard</button>' + (window.DEMO_BACKEND ? '' : '<div style="margin-top:12px"><a class="sheet-link" href="' + attr(trackerSheetUrl('cardioLog')) + '">Inspect LogCardio ↗</a></div>') + '</section></div>';
         document.getElementById('start-another').addEventListener('click', function () {
           state.saved = null; state.submissionId = null; state.cardioDraft = null; state.draft = null; state.status = null;
           bootstrap();
         });
+        bindDurationWarning(saved);
         return;
       }
       const count = saved.logRowsWritten == null ? (state.draft ? allSetCount() : 0) : saved.logRowsWritten;
@@ -6123,7 +6960,7 @@ if (typeof module !== 'undefined' && module.exports) {
       const savedDate = state.draft ? state.draft.date : (saved.date || '');
       const summary = saved.completionSummary;
       if (saved.intentionallySkipped || !summary) {
-        APP.innerHTML = '<header class="topbar"><p class="eyebrow">Workout Tracker</p><h1>' + (saved.intentionallySkipped ? 'Workout skipped' : 'Workout saved') + '</h1><p class="meta-line">' + text(savedSessionType) + (savedDate ? ' · ' + text(completionDateLabel(savedDate)) : '') + '</p></header><div class="content">' +
+        APP.innerHTML = '<header class="topbar"><p class="eyebrow">Workout Tracker</p><h1>' + (saved.intentionallySkipped ? 'Workout skipped' : 'Workout saved') + '</h1><p class="meta-line">' + text(savedSessionType) + (savedDate ? ' · ' + text(completionDateLabel(savedDate)) : '') + '</p></header><div class="content">' + durationWarningHtml(saved) +
           '<section class="card status-card" style="min-height:unset"><div class="avatar" style="width:56px;height:56px;font-size:26px">✓</div><p class="meta-line">' + text(count) + ' set' + (count === 1 ? '' : 's') + ' saved.</p><button id="start-another" class="button button-primary button-block" type="button">Back to dashboard</button></section></div>';
         bindCompletedWorkoutActions();
         return;
@@ -6137,23 +6974,32 @@ if (typeof module !== 'undefined' && module.exports) {
           '<span class="completion-check" aria-label="Workout saved">✓</span></div>' +
           '<div class="completion-summary"><span>' + text(summary.workingSetCount) + ' working set' + (Number(summary.workingSetCount) === 1 ? '' : 's') + '</span>' +
           '<span>' + text(summary.muscleCount) + ' muscle' + (Number(summary.muscleCount) === 1 ? '' : 's') + '</span></div></header>' +
-        '<main class="completion-content">' + records + completionDistributionHtml(summary) + '</main>' +
+        '<main class="completion-content">' + durationWarningHtml(saved) + records + completionDistributionHtml(summary) + '</main>' +
         '<footer class="completion-footer"><button id="start-another" class="button button-primary button-block" type="button">Done</button></footer>';
       bindCompletedWorkoutActions();
     }
 
     async function bootstrap() {
+      const performance = clientPerformanceStart('Bootstrap');
+      invalidateHistoryRequest();
       invalidateSwapRequest();
       invalidateAddExerciseRequest();
+      invalidateBundledSwapSupport();
       invalidateExerciseCueSave();
       state.loading = true; render();
       try {
-        const response = await rpc('webGetBootstrap', { clientRequestId: clientRequestId('bootstrap') });
+        const embedded = consumeInitialBootstrap(performance);
+        const response = embedded || await measuredRpc(
+          'webGetBootstrap',
+          { clientRequestId: clientRequestId('bootstrap') },
+          performance
+        );
         state.bootstrap = response.data || {};
         state.sheetUrl = state.sheetUrl || state.bootstrap.sheetUrl || '';
         if (state.bootstrap.existingDraft) {
           state.cardioDraft = null;
           state.draft = normaliseDraft(state.bootstrap.existingDraft);
+          setBundledSwapSupport(state.bootstrap.swapSupport);
           state.completionContext = state.bootstrap.completionContext || null;
           state.completionView = 'session';
           captureLoadedExerciseState(state.draft, true);
@@ -6161,6 +7007,7 @@ if (typeof module !== 'undefined' && module.exports) {
           state.workoutEdited = true;
         } else {
           state.draft = null;
+          invalidateBundledSwapSupport();
           state.previousBySetId = {};
           state.exerciseCueBaselines = {};
           state.completionContext = null;
@@ -6192,10 +7039,13 @@ if (typeof module !== 'undefined' && module.exports) {
         state.dashboardVisible = false;
         state.loading = false;
         render();
+        retryPendingDurationRecords();
+        clientPerformanceFinish(performance, 'success');
       } catch (error) {
         state.loading = false;
         APP.innerHTML = '<section class="status-card"><div><p class="eyebrow">Workout Tracker</p><h1>Couldn’t open your workout</h1><p class="meta-line">' + text(asErrorMessage(error, 'open the app')) + '</p><button id="retry-bootstrap" class="button button-primary" type="button">Try again</button><div style="margin-top:14px">' + sheetFallbackHtml() + '</div></div></section>';
         document.getElementById('retry-bootstrap').addEventListener('click', bootstrap);
+        clientPerformanceFinish(performance, 'error', error);
       }
     }
 
