@@ -1,0 +1,171 @@
+---
+import '../styles/global.css';
+
+const configuredBase = import.meta.env.BASE_URL;
+const base = configuredBase.endsWith('/') ? configuredBase : `${configuredBase}/`;
+
+const projects = [
+  {
+    title: 'Workout Tracker',
+    date: 'Sep 2026',
+    labels: ['Apps Script', 'Mobile workflow', 'Private tooling'],
+    href: `${base}workout-tracker/`,
+    visual: 'workout',
+  },
+  {
+    title: 'Personal OS',
+    date: 'Apr 2026',
+    labels: ['Context engineering', 'AI workflow design', 'Knowledge management'],
+    href: `${base}personal-os/`,
+    visual: 'personal-os',
+  },
+  {
+    title: 'Flavour Lab',
+    date: 'Aug 2026',
+    labels: ['AI product design', 'AI contracts', 'Mobile web app'],
+    href: `${base}flavour-lab/`,
+    visual: 'flavour-lab',
+  },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta
+      name="description"
+      content="Selected systems, products and writing by Amanda Esnaola."
+    />
+    <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+    <title>Amanda Esnaola · Proof of Work</title>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="site-header">
+        <div class="introduction">
+          <p class="name">Amanda Esnaola</p>
+          <p class="intro-copy">
+            <strong>Better systems = better life.</strong> I came to building through
+            operations, product and writing. AI has expanded what I can make.
+          </p>
+        </div>
+        <nav class="profile-links" aria-label="Profile links">
+          <a href="https://github.com/amandaklafke92">GitHub</a>
+          <a href="https://www.linkedin.com/in/amanda-esnaola/">LinkedIn</a>
+        </nav>
+      </header>
+
+      <section aria-label="Selected projects and writing">
+        <div class="filter-tabs" role="group" aria-label="Filter work">
+          <button type="button" data-filter="all" aria-pressed="true">All</button>
+          <button type="button" data-filter="project" aria-pressed="false">Projects</button>
+          <button type="button" data-filter="writing" aria-pressed="false">Writing</button>
+        </div>
+
+        <div class="work-grid" aria-live="polite">
+          {projects.map((project) => (
+            <a
+              class={`work-card visual-${project.visual}`}
+              href={project.href}
+              data-kind="project"
+              aria-label={`Open ${project.title}`}
+            >
+              <div class="card-meta">
+                <h2>{project.title}</h2>
+                <time>{project.date}</time>
+                <p class="card-labels">
+                  {project.labels.map((label) => <span>{label}</span>)}
+                </p>
+              </div>
+
+              <div class="visual-stage">
+                {project.visual === 'workout' && (
+                  <div class="phone-frame">
+                    <div class="phone-camera" aria-hidden="true"></div>
+                    <img
+                      src={`${base}workout-tracker/assets/workout-tracker-complete.png`}
+                      alt="Workout Tracker training distribution screen"
+                    />
+                  </div>
+                )}
+
+                {project.visual === 'flavour-lab' && (
+                  <div class="phone-frame">
+                    <div class="phone-camera" aria-hidden="true"></div>
+                    <video
+                      autoplay
+                      muted
+                      loop
+                      playsinline
+                      preload="metadata"
+                      poster={`${base}flavour-lab/assets/suggestions.png`}
+                      aria-label="Flavour Lab workflow from recipe selection through generated suggestions"
+                    >
+                      <source src={`${base}assets/flavour-lab-loop.mp4`} type="video/mp4" />
+                    </video>
+                  </div>
+                )}
+
+                {project.visual === 'personal-os' && (
+                  <div class="tree-window" aria-label="Personal OS file tree">
+                    <div class="tree-title">amanda-os / workspace</div>
+                    <div class="tree-content" aria-hidden="true">
+                      <p><span>▾</span> core-context</p>
+                      <p class="depth-one"><span>·</span> priorities.md</p>
+                      <p class="depth-one"><span>·</span> how-i-work.md</p>
+                      <p><span>▾</span> projects</p>
+                      <p class="depth-one"><span>▾</span> workout-tracker</p>
+                      <p class="depth-two"><span>·</span> AGENTS.md</p>
+                      <p class="depth-two"><span>·</span> logs</p>
+                      <p><span>›</span> knowledge</p>
+                      <p><span>›</span> skills</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </a>
+          ))}
+
+          <p class="empty-state" hidden data-empty-state>
+            Writing will appear here when it’s ready.
+          </p>
+        </div>
+      </section>
+
+      <footer>
+        <span>Amanda Esnaola · Sydney</span>
+        <span>Built from work I actually use.</span>
+      </footer>
+    </main>
+
+    <script>
+      const filters = [...document.querySelectorAll('[data-filter]')];
+      const cards = [...document.querySelectorAll('[data-kind]')];
+      const emptyState = document.querySelector('[data-empty-state]');
+
+      filters.forEach((filter) => {
+        filter.addEventListener('click', () => {
+          const selected = filter.dataset.filter;
+          filters.forEach((button) => {
+            button.setAttribute('aria-pressed', String(button === filter));
+          });
+
+          let visibleCount = 0;
+          cards.forEach((card) => {
+            const visible = selected === 'all' || card.dataset.kind === selected;
+            card.hidden = !visible;
+            if (visible) visibleCount += 1;
+          });
+
+          emptyState.hidden = visibleCount !== 0;
+        });
+      });
+
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll('video').forEach((video) => video.pause());
+      }
+    </script>
+  </body>
+</html>

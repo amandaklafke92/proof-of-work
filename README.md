@@ -2,17 +2,21 @@
 
 [View the live portfolio](https://amandaklafke92.github.io/proof-of-work/)
 
-Source files for my portfolio of selected projects. The portfolio homepage
-(`index.html`) presents the projects and links to their case studies and demos.
-This README is a guide to maintaining the repository.
+Source files for my portfolio of selected projects and writing. Astro builds the
+homepage; the existing project case studies remain static HTML pages at their
+original URLs.
 
 ## Editing the portfolio
 
-- `index.html` — edit the homepage and its project links.
+- `src/pages/index.astro` — edit the homepage structure, copy and project links.
+- `src/styles/global.css` — edit the homepage typography, layout and card styles.
+- `public/` — homepage media and other files copied directly into the build.
 - `personal-os/`, `workout-tracker/`, `flavour-lab/` — each project's `index.html`
   contains its case study; supporting screenshots and demos live alongside it.
 
-The site uses static HTML, CSS and JavaScript. No build step is required.
+Run `npm install` once, then `npm run dev` for local editing or `npm run build`
+to produce the deployable site in `dist/`. GitHub Pages deploys that build via
+the workflow in `.github/workflows/deploy-pages.yml`.
 
 ## Public content boundary
 
