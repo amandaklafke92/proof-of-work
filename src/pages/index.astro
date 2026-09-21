@@ -27,6 +27,12 @@ const projects = [
     visual: 'flavour-lab',
   },
 ];
+
+const flavourLabThoughts = [
+  'I love cooking, but hate how much time it takes.',
+  'Could AI do the actual cooking for me?',
+  'A robot chef would need to perceive its surroundings, handle tools and ingredients and navigate the space. If I redesigned a kitchen around the robot, what would it look like?',
+];
 ---
 
 <!doctype html>
@@ -47,8 +53,16 @@ const projects = [
         <div class="introduction">
           <p class="name">Amanda Esnaola</p>
           <p class="intro-copy">
-            I came to building through operations, product and writing. AI has expanded
-            what I can make.
+            I come from business operations and product, fascinated by understanding how
+            systems work and with a soft spot for spreadsheets. I’m not technical by
+            training but I am building things with AI.
+          </p>
+          <p class="work-intro">Below are some recent projects.</p>
+          <p class="thought-note">
+            Follow the thought bubbles. Hover over a marked project, or tap “Thought
+            trail” on mobile, to see the side questions, connections and curious tangents
+            that surfaced while I was building it. These aren’t necessarily problems the
+            project was designed to solve but traces of where the work took my thinking.
           </p>
         </div>
         <nav class="profile-links" aria-label="Profile links">
@@ -66,66 +80,116 @@ const projects = [
 
         <div class="work-grid" aria-live="polite">
           {projects.map((project) => (
-            <a
+            <article
               class={`work-card visual-${project.visual}`}
-              href={project.href}
               data-kind="project"
-              aria-label={`Open ${project.title}`}
+              data-thought-card={project.visual === 'flavour-lab' ? '' : undefined}
             >
-              <div class="card-meta">
-                <h2>{project.title}</h2>
-                <time>{project.date}</time>
-                <p class="card-labels">
-                  {project.labels.map((label) => <span>{label}</span>)}
-                </p>
-              </div>
+              <a
+                class="work-card-link"
+                href={project.href}
+                aria-label={`Open ${project.title}`}
+              >
+                <div class="card-meta">
+                  <h2>{project.title}</h2>
+                  <time>{project.date}</time>
+                  <p class="card-labels">
+                    {project.labels.map((label) => <span>{label}</span>)}
+                  </p>
+                </div>
 
-              <div class="visual-stage">
-                {project.visual === 'workout' && (
-                  <div class="phone-frame">
-                    <div class="phone-camera" aria-hidden="true"></div>
-                    <img
-                      src={`${base}workout-tracker/assets/workout-tracker-complete.png`}
-                      alt="Workout Tracker training distribution screen"
-                    />
-                  </div>
-                )}
-
-                {project.visual === 'flavour-lab' && (
-                  <div class="phone-frame">
-                    <div class="phone-camera" aria-hidden="true"></div>
-                    <video
-                      autoplay
-                      muted
-                      loop
-                      playsinline
-                      preload="metadata"
-                      poster={`${base}flavour-lab/assets/suggestions.png`}
-                      aria-label="Flavour Lab workflow from recipe selection through generated suggestions"
-                    >
-                      <source src={`${base}assets/flavour-lab-loop.mp4`} type="video/mp4" />
-                    </video>
-                  </div>
-                )}
-
-                {project.visual === 'personal-os' && (
-                  <div class="tree-window" aria-label="Personal OS file tree">
-                    <div class="tree-title">amanda-os / workspace</div>
-                    <div class="tree-content" aria-hidden="true">
-                      <p><span>▾</span> core-context</p>
-                      <p class="depth-one"><span>·</span> priorities.md</p>
-                      <p class="depth-one"><span>·</span> how-i-work.md</p>
-                      <p><span>▾</span> projects</p>
-                      <p class="depth-one"><span>▾</span> workout-tracker</p>
-                      <p class="depth-two"><span>·</span> AGENTS.md</p>
-                      <p class="depth-two"><span>·</span> logs</p>
-                      <p><span>›</span> knowledge</p>
-                      <p><span>›</span> skills</p>
+                <div class="visual-stage">
+                  {project.visual === 'workout' && (
+                    <div class="phone-frame">
+                      <div class="phone-camera" aria-hidden="true"></div>
+                      <img
+                        src={`${base}workout-tracker/assets/workout-tracker-complete.png`}
+                        alt="Workout Tracker training distribution screen"
+                      />
                     </div>
-                  </div>
-                )}
-              </div>
-            </a>
+                  )}
+
+                  {project.visual === 'flavour-lab' && (
+                    <div class="phone-frame">
+                      <div class="phone-camera" aria-hidden="true"></div>
+                      <video
+                        autoplay
+                        muted
+                        loop
+                        playsinline
+                        preload="metadata"
+                        poster={`${base}flavour-lab/assets/suggestions.png`}
+                        aria-label="Flavour Lab workflow from recipe selection through generated suggestions"
+                      >
+                        <source src={`${base}assets/flavour-lab-loop.mp4`} type="video/mp4" />
+                      </video>
+                    </div>
+                  )}
+
+                  {project.visual === 'personal-os' && (
+                    <div class="tree-window" aria-label="Personal OS file tree">
+                      <div class="tree-title">amanda-os / workspace</div>
+                      <div class="tree-content" aria-hidden="true">
+                        <p><span>▾</span> core-context</p>
+                        <p class="depth-one"><span>·</span> priorities.md</p>
+                        <p class="depth-one"><span>·</span> how-i-work.md</p>
+                        <p><span>▾</span> projects</p>
+                        <p class="depth-one"><span>▾</span> workout-tracker</p>
+                        <p class="depth-two"><span>·</span> AGENTS.md</p>
+                        <p class="depth-two"><span>·</span> logs</p>
+                        <p><span>›</span> knowledge</p>
+                        <p><span>›</span> skills</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </a>
+
+              {project.visual === 'flavour-lab' && (
+                <>
+                  <button
+                    class="thought-trigger"
+                    type="button"
+                    aria-expanded="false"
+                    aria-controls="flavour-lab-thoughts"
+                    data-thought-trigger
+                  >
+                    <span aria-hidden="true" class="thought-trigger-mark">···</span>
+                    Thought trail
+                    <span class="thought-count">3</span>
+                  </button>
+
+                  <aside
+                    class="thought-bubble"
+                    id="flavour-lab-thoughts"
+                    aria-label="Thought trail sparked by Flavour Lab"
+                    aria-hidden="true"
+                    data-thought-bubble
+                  >
+                    <button
+                      class="thought-close"
+                      type="button"
+                      aria-label="Close thought trail"
+                      data-thought-close
+                    >
+                      ×
+                    </button>
+                    <p class="thought-kicker">A thought this sparked…</p>
+                    <div class="thought-pages" aria-live="polite">
+                      {flavourLabThoughts.map((thought, index) => (
+                        <p class="thought-page" hidden={index !== 0} data-thought-page>
+                          {thought}
+                        </p>
+                      ))}
+                    </div>
+                    <div class="thought-actions">
+                      <span data-thought-position>1 of 3</span>
+                      <button type="button" data-thought-next>Next thought →</button>
+                    </div>
+                  </aside>
+                </>
+              )}
+            </article>
           ))}
 
           <a class="work-card visual-writing" href={`${base}writing/daddys-little-girls/`} data-kind="writing" aria-labelledby="daddys-little-girls-title">
@@ -186,6 +250,88 @@ const projects = [
 
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         document.querySelectorAll('video').forEach((video) => video.pause());
+      }
+
+      const thoughtCard = document.querySelector('[data-thought-card]');
+
+      if (thoughtCard) {
+        const trigger = thoughtCard.querySelector('[data-thought-trigger]');
+        const bubble = thoughtCard.querySelector('[data-thought-bubble]');
+        const pages = [...thoughtCard.querySelectorAll('[data-thought-page]')];
+        const position = thoughtCard.querySelector('[data-thought-position]');
+        const next = thoughtCard.querySelector('[data-thought-next]');
+        const close = thoughtCard.querySelector('[data-thought-close]');
+        const canHover = window.matchMedia('(hover: hover) and (pointer: fine)');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        let activeThought = 0;
+        let thoughtTimer;
+
+        const renderThought = () => {
+          pages.forEach((page, index) => {
+            page.hidden = index !== activeThought;
+          });
+          position.textContent = `${activeThought + 1} of ${pages.length}`;
+          next.textContent = activeThought === pages.length - 1
+            ? 'Start again ↺'
+            : 'Next thought →';
+        };
+
+        const stopSequence = () => {
+          window.clearInterval(thoughtTimer);
+        };
+
+        const setThoughtOpen = (open) => {
+          thoughtCard.dataset.thoughtOpen = String(open);
+          trigger.setAttribute('aria-expanded', String(open));
+          bubble.setAttribute('aria-hidden', String(!open));
+          if (!open) stopSequence();
+        };
+
+        const startSequence = () => {
+          stopSequence();
+          activeThought = 0;
+          renderThought();
+          setThoughtOpen(true);
+
+          if (!reduceMotion.matches) {
+            thoughtTimer = window.setInterval(() => {
+              if (activeThought === pages.length - 1) {
+                stopSequence();
+                return;
+              }
+              activeThought += 1;
+              renderThought();
+            }, 3600);
+          }
+        };
+
+        thoughtCard.addEventListener('pointerenter', () => {
+          if (canHover.matches) startSequence();
+        });
+
+        thoughtCard.addEventListener('pointerleave', () => {
+          if (canHover.matches) setThoughtOpen(false);
+        });
+
+        trigger.addEventListener('click', () => {
+          stopSequence();
+          activeThought = 0;
+          renderThought();
+          setThoughtOpen(true);
+        });
+
+        next.addEventListener('click', () => {
+          stopSequence();
+          activeThought = (activeThought + 1) % pages.length;
+          renderThought();
+        });
+
+        close.addEventListener('click', () => {
+          setThoughtOpen(false);
+          trigger.focus();
+        });
+
+        renderThought();
       }
     </script>
   </body>
