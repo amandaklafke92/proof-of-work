@@ -4,8 +4,7 @@ import SketchIcon from '../components/SketchIcon.astro';
 
 const configuredBase = import.meta.env.BASE_URL;
 const base = configuredBase.endsWith('/') ? configuredBase : `${configuredBase}/`;
-const coffeeBookingUrl: string | undefined = undefined;
-const CoffeeLink = coffeeBookingUrl ? 'a' : 'button';
+const coffeeBookingUrl = 'https://calendar.app.google/ZcQgL58joEkLaMBc7';
 
 const projects = [
   {
@@ -76,10 +75,10 @@ const flavourLabThoughts = [
             <span class="profile-label">linkedin</span>
             <span class="profile-icon"><SketchIcon name="linkedin" /></span>
           </a>
-          <CoffeeLink class="profile-link" href={coffeeBookingUrl} type={coffeeBookingUrl ? undefined : 'button'} disabled={!coffeeBookingUrl || undefined} aria-label="virtual coffee — book a chat">
+          <a class="profile-link" href={coffeeBookingUrl} aria-label="virtual coffee — book a chat">
             <span class="profile-label">virtual coffee</span>
             <span class="profile-icon"><SketchIcon name="coffee" /></span>
-          </CoffeeLink>
+          </a>
         </nav>
       </header>
 
@@ -236,10 +235,10 @@ const flavourLabThoughts = [
         <span>better systems = better life</span>
       </footer>
       <p class="coffee-invitation">
-        <CoffeeLink class="coffee-link" href={coffeeBookingUrl} type={coffeeBookingUrl ? undefined : 'button'} disabled={!coffeeBookingUrl || undefined} aria-label="virtual coffee? — book a chat">
+        <a class="coffee-link" href={coffeeBookingUrl} aria-label="virtual coffee? — book a chat">
           <SketchIcon name="coffee" />
           <span>virtual coffee?</span>
-        </CoffeeLink>
+        </a>
       </p>
     </main>
 
