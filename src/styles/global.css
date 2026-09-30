@@ -63,17 +63,119 @@ button {
 
 .profile-links {
   display: flex;
+  align-items: center;
   gap: 20px;
   font-size: 0.8125rem;
+  margin-top: -8px;
 }
 
-.profile-links a {
+.profile-links .profile-link {
   color: rgba(25, 25, 21, 0.66);
   text-decoration: none;
 }
 
-.profile-links a:hover {
+.profile-links .profile-link:hover,
+.profile-links .profile-link:focus-visible {
   color: #191915;
+}
+
+.profile-link {
+  position: relative;
+  display: inline-grid;
+  align-items: center;
+  min-height: 32px;
+  white-space: nowrap;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+}
+
+.profile-label {
+  transition: opacity 120ms ease;
+}
+
+.profile-icon {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.profile-icon svg {
+  display: block;
+  width: 27px;
+  height: 27px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .profile-link:hover .profile-label {
+    opacity: 0;
+  }
+
+  .profile-link:hover .profile-icon {
+    opacity: 1;
+  }
+}
+
+.profile-link:focus-visible .profile-label {
+  opacity: 0;
+}
+
+.profile-link:focus-visible .profile-icon {
+  opacity: 1;
+}
+
+.profile-link:focus-visible,
+.coffee-invitation .coffee-link:focus-visible {
+  outline: 2px solid #191915;
+  outline-offset: 4px;
+  border-radius: 3px;
+}
+
+.coffee-invitation {
+  margin: 28px 0 0;
+  text-align: center;
+  font-size: 0.8125rem;
+}
+
+.coffee-invitation .coffee-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  color: rgba(25, 25, 21, 0.66);
+  text-decoration: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+}
+
+.coffee-invitation svg {
+  width: 30px;
+  height: 30px;
+  color: #191915;
+}
+
+.coffee-invitation .coffee-link:hover,
+.coffee-invitation .coffee-link:focus-visible {
+  color: #191915;
+}
+
+.coffee-invitation .coffee-link:hover span {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (pointer: coarse) {
+  .profile-link,
+  .coffee-invitation .coffee-link {
+    min-height: 44px;
+  }
 }
 
 .filter-tabs {
@@ -641,6 +743,11 @@ footer {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .profile-label,
+  .profile-icon {
+    transition: none;
+  }
+
   .work-card {
     transition: none;
   }
