@@ -57,6 +57,14 @@ button {
   max-width: 610px;
 }
 
+.intro-quote {
+  max-width: 560px;
+  margin: 14px 0 24px;
+  padding-left: 28px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 .intro-copy strong {
   font-weight: 700;
 }
