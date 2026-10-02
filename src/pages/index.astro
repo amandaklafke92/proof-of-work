@@ -168,9 +168,17 @@ const flavourLabThoughts = [
                     aria-controls="flavour-lab-thoughts"
                     data-thought-trigger
                   >
-                    <span aria-hidden="true" class="thought-trigger-mark">···</span>
-                    Thought trail
-                    <span class="thought-count">3</span>
+                    <svg class="thought-mouse" viewBox="0 0 92 72" aria-hidden="true">
+                      <path d="M31 57c-12 0-20-7-20-17 0-12 10-22 25-22 13 0 26 9 26 22 0 10-8 17-20 17H31Z" />
+                      <path d="M22 22c-5-8 3-15 10-8M46 17c2-9 11-8 11 1" />
+                      <path d="M62 47c12 1 17 8 23 2" />
+                      <circle cx="42" cy="31" r="1.8" />
+                      <circle cx="53" cy="31" r="1.8" />
+                      <path d="M47 38c2 2 5 2 7 0M39 39l-9 2M39 43l-9 4M56 39l9 2M56 43l9 4" />
+                      <circle class="thought-dot-large" cx="72" cy="17" r="5" />
+                      <circle class="thought-dot-small" cx="82" cy="8" r="2.6" />
+                    </svg>
+                    <span class="sr-only">Open Flavour Lab scratchpad</span>
                   </button>
 
                   <aside
@@ -188,7 +196,6 @@ const flavourLabThoughts = [
                     >
                       ×
                     </button>
-                    <p class="thought-kicker">A thought this sparked…</p>
                     <div class="thought-pages" aria-live="polite">
                       {flavourLabThoughts.map((thought, index) => (
                         <p class="thought-page" hidden={index !== 0} data-thought-page>
@@ -198,7 +205,7 @@ const flavourLabThoughts = [
                     </div>
                     <div class="thought-actions">
                       <span data-thought-position>1 of 3</span>
-                      <button type="button" data-thought-next>Next thought →</button>
+                      <button type="button" aria-label="Next thought" data-thought-next>›</button>
                     </div>
                   </aside>
                 </>
@@ -290,10 +297,12 @@ const flavourLabThoughts = [
           pages.forEach((page, index) => {
             page.hidden = index !== activeThought;
           });
-          position.textContent = `${activeThought + 1} of ${pages.length}`;
-          next.textContent = activeThought === pages.length - 1
-            ? 'Start again ↺'
-            : 'Next thought →';
+          position.textContent = `${activeThought + 1} / ${pages.length}`;
+          next.setAttribute(
+            'aria-label',
+            activeThought === pages.length - 1 ? 'Start again' : 'Next thought',
+          );
+          next.textContent = activeThought === pages.length - 1 ? '↺' : '›';
         };
 
         const stopSequence = () => {

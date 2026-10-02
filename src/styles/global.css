@@ -347,30 +347,20 @@ button {
 .thought-trigger {
   position: absolute;
   z-index: 5;
-  right: 16px;
-  bottom: 16px;
-  display: inline-flex;
-  min-height: 34px;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 7px 5px 6px;
-  border: 1px solid rgba(25, 25, 21, 0.14);
-  border-radius: 999px;
-  background: rgba(255, 254, 250, 0.92);
-  box-shadow: 0 7px 20px rgba(55, 42, 31, 0.10);
+  right: 12px;
+  bottom: 9px;
+  width: 82px;
+  height: 66px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: rgba(25, 25, 21, 0.76);
   cursor: pointer;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 0.6875rem;
-  line-height: 1;
-  backdrop-filter: blur(8px);
 }
 
 .thought-trigger:hover,
 .thought-trigger:focus-visible,
 [data-thought-open="true"] .thought-trigger {
-  border-color: rgba(25, 25, 21, 0.28);
-  background: #fffefa;
   color: #191915;
 }
 
@@ -379,45 +369,46 @@ button {
   outline-offset: 2px;
 }
 
-.thought-trigger-mark {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border-radius: 50%;
-  background: #edb497;
-  color: #3f271b;
-  font-family: Georgia, serif;
-  font-size: 0.875rem;
-  letter-spacing: 0.02em;
-  line-height: 0.6;
+.thought-mouse {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: #fffefa;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+  transform: rotate(-2deg);
+  transition: transform 160ms ease;
 }
 
-.thought-count {
-  display: grid;
-  min-width: 20px;
-  height: 20px;
-  place-items: center;
-  border-radius: 999px;
-  background: rgba(25, 25, 21, 0.07);
-  font-size: 0.625rem;
+.thought-mouse .thought-dot-large,
+.thought-mouse .thought-dot-small {
+  fill: #fffefa;
+}
+
+.thought-trigger:hover .thought-mouse,
+.thought-trigger:focus-visible .thought-mouse,
+[data-thought-open="true"] .thought-mouse {
+  transform: translateY(-3px) rotate(1deg);
 }
 
 .thought-bubble {
   position: absolute;
   z-index: 4;
-  right: 18px;
-  bottom: 70px;
-  width: min(282px, calc(100% - 36px));
-  min-height: 176px;
-  padding: 22px 22px 16px;
-  border: 1px solid rgba(25, 25, 21, 0.16);
-  border-radius: 26px 26px 8px 26px;
-  background: rgba(255, 254, 250, 0.97);
-  box-shadow: 0 22px 54px rgba(55, 42, 31, 0.18);
+  right: 22px;
+  bottom: 66px;
+  width: min(305px, calc(100% - 38px));
+  min-height: 166px;
+  padding: 31px 31px 22px;
+  border: 2px solid rgba(25, 25, 21, 0.86);
+  border-radius: 47% 53% 48% 52% / 42% 44% 56% 58%;
+  background: #fffefa;
+  box-shadow: 6px 8px 0 rgba(25, 25, 21, 0.08);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(8px) scale(0.98);
+  transform: translateY(8px) scale(0.96) rotate(1deg);
   transform-origin: bottom right;
   transition: opacity 160ms ease, transform 190ms ease, visibility 190ms;
   visibility: hidden;
@@ -428,29 +419,29 @@ button {
 .thought-bubble::after {
   content: "";
   position: absolute;
-  border: 1px solid rgba(25, 25, 21, 0.16);
+  border: 2px solid rgba(25, 25, 21, 0.86);
   border-radius: 50%;
   background: #fffefa;
 }
 
 .thought-bubble::before {
-  right: 24px;
-  bottom: -15px;
-  width: 18px;
-  height: 18px;
+  right: 33px;
+  bottom: -18px;
+  width: 15px;
+  height: 15px;
 }
 
 .thought-bubble::after {
-  right: 14px;
-  bottom: -27px;
-  width: 9px;
-  height: 9px;
+  right: 19px;
+  bottom: -31px;
+  width: 8px;
+  height: 8px;
 }
 
 [data-thought-open="true"] .thought-bubble {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0) scale(1);
+  transform: translateY(0) scale(1) rotate(-1deg);
   visibility: visible;
 }
 
@@ -477,27 +468,19 @@ button {
   color: #191915;
 }
 
-.thought-kicker {
-  margin: 0 30px 12px 0;
-  color: #9a6248;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 0.625rem;
-  font-weight: 700;
-  letter-spacing: 0.055em;
-  line-height: 1.2;
-  text-transform: uppercase;
-}
-
 .thought-pages {
   display: grid;
-  min-height: 76px;
+  min-height: 72px;
   align-items: start;
 }
 
 .thought-page {
   margin: 0;
-  font-size: 1.0625rem;
-  line-height: 1.35;
+  font-family: "Comic Sans MS", "Bradley Hand", cursive;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.25;
   text-wrap: balance;
 }
 
@@ -509,30 +492,41 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-top: 15px;
-  padding-top: 11px;
-  border-top: 1px solid rgba(25, 25, 21, 0.09);
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 0;
+  border-top: 0;
   color: rgba(25, 25, 21, 0.48);
   font-family: Arial, Helvetica, sans-serif;
   font-size: 0.625rem;
 }
 
 .thought-actions button {
-  min-height: 28px;
-  padding: 0;
+  width: 27px;
+  height: 27px;
+  padding: 0 0 3px;
   border: 0;
   background: transparent;
   color: rgba(25, 25, 21, 0.72);
   cursor: pointer;
-  font-size: 0.6875rem;
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 .thought-actions button:hover,
 .thought-actions button:focus-visible {
   color: #191915;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .visual-stage {
