@@ -31,9 +31,9 @@ const projects = [
 ];
 
 const flavourLabThoughts = [
-  'I love cooking, but hate how much time it takes.',
-  'Could AI do the actual cooking for me?',
-  'A robot chef would need to perceive its surroundings, handle tools and ingredients and navigate the space. If I redesigned a kitchen around the robot, what would it look like?',
+  'Grr, I love cooking but hate how much time it takes!',
+  'Hmm, what if AI could do it for me?',
+  'Well, a robot chef would need to navigate the space, handle tools... but wait, what if I redesigned a kitchen around the robot?',
 ];
 ---
 
@@ -199,7 +199,9 @@ const flavourLabThoughts = [
                     <div class="thought-pages" aria-live="polite">
                       {flavourLabThoughts.map((thought, index) => (
                         <p class="thought-page" hidden={index !== 0} data-thought-page>
-                          {thought}
+                          {index === 2 ? (
+                            <>Well, a robot chef would need to navigate the space, handle tools... but wait, what if I redesigned a kitchen around the <em>robot</em>?</>
+                          ) : thought}
                         </p>
                       ))}
                     </div>
