@@ -65,7 +65,7 @@ const flavourLabThoughts = [
           </p>
           <p class="work-intro">Here’s a selection of both.</p>
           <p class="thought-note">
-            P.S. Hover over the mouse (or click on mobile) to see the side questions,
+            P.S. Hover over the mice (or click on mobile) to see the side questions,
             connections and tangents that surfaced while I was building it.
           </p>
         </div>
@@ -215,38 +215,61 @@ const flavourLabThoughts = [
             </article>
           ))}
 
-          <a class="work-card visual-writing" href={`${base}writing/daddys-little-girls/`} data-kind="writing" aria-labelledby="daddys-little-girls-title">
-            <div class="card-meta">
-              <h2 id="daddys-little-girls-title">Daddy’s Little Girls</h2>
-              <time>2024</time>
-              <p class="card-labels">
-                <span>Short memoir</span>
-                <span>UTS Writers’ Anthology</span>
-              </p>
-            </div>
+          <article class="work-card visual-writing" data-kind="writing" data-thought-card>
+            <a class="work-card-link" href={`${base}writing/daddys-little-girls/`} aria-labelledby="daddys-little-girls-title">
+              <div class="card-meta">
+                <h2 id="daddys-little-girls-title">Daddy’s Little Girls</h2>
+                <time>2024</time>
+                <p class="card-labels">
+                  <span>Short memoir</span>
+                  <span>UTS Writers’ Anthology</span>
+                </p>
+              </div>
 
-            <div class="visual-stage writing-stage">
-              <img
-                class="writing-cover"
-                src={`${base}assets/blood-bone-cover.jpg`}
-                alt="Cover of Blood & Bone: UTS Writers’ Anthology 2024"
-              />
-              <div class="writing-thought" aria-label="Excerpt from Daddy’s Little Girls">
-                <p>
+              <div class="visual-stage writing-stage">
+                <img
+                  class="writing-cover"
+                  src={`${base}assets/blood-bone-cover.jpg`}
+                  alt="Cover of Blood & Bone: UTS Writers’ Anthology 2024"
+                />
+              </div>
+            </a>
+
+            <button
+              class="thought-trigger writing-mouse-trigger"
+              type="button"
+              aria-expanded="false"
+              aria-controls="daddys-little-girls-thought"
+              data-thought-trigger
+            >
+              <svg class="writing-mouse" viewBox="0 0 92 72" aria-hidden="true">
+                <path d="M24 57c-9 0-15-6-15-15 0-13 10-23 25-23 12 0 25 8 25 20 0 11-9 18-20 18H24Z" />
+                <path d="M25 23c-5-8 3-15 10-8M42 19c0-9 10-10 11-1" />
+                <path d="M58 46c12 3 18 8 25 3" />
+                <circle cx="26" cy="32" r="1.8" />
+                <circle cx="37" cy="32" r="1.8" />
+                <path d="M25 39c2 2 5 2 7 0M23 40l-9 2M23 44l-9 4M38 40l9 2M38 44l9 4" />
+                <path d="M47 21c4 2 5 5 5 8" />
+              </svg>
+              <span class="sr-only">Open Daddy’s Little Girls excerpt</span>
+            </button>
+
+            <aside
+              class="thought-bubble writing-thought-bubble"
+              id="daddys-little-girls-thought"
+              aria-label="Excerpt from Daddy’s Little Girls"
+              aria-hidden="true"
+              data-thought-bubble
+            >
+              <button class="thought-close" type="button" aria-label="Close excerpt" data-thought-close>×</button>
+              <div class="thought-pages" aria-live="polite">
+                <p class="thought-page" data-thought-page>
                   “That day, I begin to learn that right and wrong exist within a spectrum of
                   grey, but it will be years before I can articulate this.”
                 </p>
               </div>
-              <svg class="writing-mouse" viewBox="0 0 92 72" aria-hidden="true">
-                <path d="M28 58c-11 0-18-7-18-17 0-12 9-22 24-22 13 0 26 9 26 22 0 10-8 17-20 17H28Z" />
-                <path d="M19 24c-4-9 4-15 11-8M45 18c1-9 11-8 11 1" />
-                <path d="M60 48c11 4 17 1 23 7" />
-                <circle cx="41" cy="32" r="1.8" />
-                <circle cx="52" cy="32" r="1.8" />
-                <path d="M46 39c2 2 5 2 7 0M38 40l-9 2M38 44l-9 4M55 40l9 2M55 44l9 4" />
-              </svg>
-            </div>
-          </a>
+            </aside>
+          </article>
 
           <p class="empty-state" hidden data-empty-state>
             Writing will appear here when it’s ready.
@@ -293,9 +316,9 @@ const flavourLabThoughts = [
         document.querySelectorAll('video').forEach((video) => video.pause());
       }
 
-      const thoughtCard = document.querySelector('[data-thought-card]');
+      const thoughtCards = [...document.querySelectorAll('[data-thought-card]')];
 
-      if (thoughtCard) {
+      thoughtCards.forEach((thoughtCard) => {
         const trigger = thoughtCard.querySelector('[data-thought-trigger]');
         const bubble = thoughtCard.querySelector('[data-thought-bubble]');
         const pages = [...thoughtCard.querySelectorAll('[data-thought-page]')];
@@ -311,12 +334,14 @@ const flavourLabThoughts = [
           pages.forEach((page, index) => {
             page.hidden = index !== activeThought;
           });
-          position.textContent = `${activeThought + 1} / ${pages.length}`;
-          next.setAttribute(
-            'aria-label',
-            activeThought === pages.length - 1 ? 'Start again' : 'Next thought',
-          );
-          next.textContent = activeThought === pages.length - 1 ? '↺' : '›';
+          if (position && next) {
+            position.textContent = `${activeThought + 1} / ${pages.length}`;
+            next.setAttribute(
+              'aria-label',
+              activeThought === pages.length - 1 ? 'Start again' : 'Next thought',
+            );
+            next.textContent = activeThought === pages.length - 1 ? '↺' : '›';
+          }
         };
 
         const stopSequence = () => {
@@ -363,11 +388,13 @@ const flavourLabThoughts = [
           setThoughtOpen(true);
         });
 
-        next.addEventListener('click', () => {
-          stopSequence();
-          activeThought = (activeThought + 1) % pages.length;
-          renderThought();
-        });
+        if (next) {
+          next.addEventListener('click', () => {
+            stopSequence();
+            activeThought = (activeThought + 1) % pages.length;
+            renderThought();
+          });
+        }
 
         close.addEventListener('click', () => {
           setThoughtOpen(false);
@@ -375,7 +402,7 @@ const flavourLabThoughts = [
         });
 
         renderThought();
-      }
+      });
     </script>
   </body>
 </html>
