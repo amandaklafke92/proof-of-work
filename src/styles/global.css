@@ -623,14 +623,25 @@ button {
   position: relative;
   display: grid;
   place-items: center;
-  padding: 28px 38px 38px;
+  padding: 18px 24px 26px;
+}
+
+.writing-cover-frame {
+  position: relative;
+  width: min(59%, 218px);
+  aspect-ratio: 997 / 1550;
+  overflow: hidden;
+  box-shadow: 8px 12px 22px rgba(30, 30, 25, 0.18);
 }
 
 .writing-cover {
-  width: min(53%, 214px);
-  max-height: 305px;
-  object-fit: contain;
-  box-shadow: 8px 12px 22px rgba(30, 30, 25, 0.18);
+  position: absolute;
+  top: -4%;
+  left: -19.7%;
+  display: block;
+  width: 139%;
+  max-width: none;
+  height: auto;
 }
 
 .writing-mouse {
@@ -648,7 +659,7 @@ button {
 }
 
 .writing-mouse-trigger {
-  top: 5px;
+  top: 126px;
   right: 13px;
   bottom: auto;
   width: 70px;
@@ -662,11 +673,25 @@ button {
 }
 
 .writing-thought-bubble {
-  right: 16px;
-  bottom: 58px;
+  top: 116px;
+  right: 80px;
+  bottom: auto;
   width: min(265px, calc(100% - 32px));
   min-height: 150px;
   padding: 28px 28px 20px;
+  transform-origin: right center;
+}
+
+.writing-thought-bubble::before {
+  top: 51px;
+  right: -18px;
+  bottom: auto;
+}
+
+.writing-thought-bubble::after {
+  top: 70px;
+  right: -31px;
+  bottom: auto;
 }
 
 .writing-thought-bubble .thought-pages {
@@ -760,6 +785,20 @@ footer {
     bottom: 65px;
     width: calc(100% - 28px);
     min-height: 184px;
+  }
+
+  .writing-mouse-trigger {
+    top: 118px;
+    right: 13px;
+    bottom: auto;
+  }
+
+  .writing-thought-bubble {
+    top: 111px;
+    right: 80px;
+    bottom: auto;
+    width: min(240px, calc(100% - 96px));
+    min-height: 150px;
   }
 }
 
