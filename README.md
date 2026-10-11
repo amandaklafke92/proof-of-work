@@ -18,6 +18,10 @@ Run `npm install` once, then `npm run dev` for local editing or `npm run build`
 to produce the deployable site in `dist/`. GitHub Pages deploys that build via
 the workflow in `.github/workflows/deploy-pages.yml`.
 
+## Next-edit review checkpoint
+
+Before a guided edit to the public portfolio, raise the [conversation-CTA idea](../career/backlog.md) for Amanda’s review. Its core goal is to start conversations; the recorded CTA copy, arrow, sticky-note and delayed mouse/speech-bubble concepts are hypotheses, not approved changes. Preserve the preference for minimal visual clutter. Do not add a timer, tracking/analytics, a persistent CTA or any related UI unless Amanda selects and explicitly requests an approach. This checkpoint guides future portfolio editing work only; it cannot detect or change manual GitHub edits.
+
 ## Public content boundary
 
 Workout Tracker demo data may include workout names, weights, volumes and
