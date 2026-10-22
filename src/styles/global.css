@@ -235,6 +235,16 @@ button {
   margin-top: 16px;
 }
 
+@media (min-width: 521px) {
+  .intro-copy,
+  .intro-quote,
+  .portfolio-cta,
+  .thought-note {
+    text-align: justify;
+    text-align-last: left;
+  }
+}
+
 .work-intro {
   margin: 0 0 12px;
   font-size: 0.9375rem;
